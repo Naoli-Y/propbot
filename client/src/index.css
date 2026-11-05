@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-paper text-slate-800 font-sans; }
+  ::selection { @apply bg-ember-100; }
+}
+
+@layer components {
+  .card { @apply bg-white border border-line rounded-xl shadow-card; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap; }
+  .btn-primary { @apply btn bg-ink-900 text-white hover:bg-ink-800 active:bg-ink-950; }
+  .btn-accent { @apply btn bg-ember-500 text-white hover:bg-ember-600; }
+  .btn-secondary { @apply btn bg-white text-slate-700 border border-line hover:bg-slate-50; }
+  .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100; }
+  .btn-danger { @apply btn bg-white text-red-600 border border-red-200 hover:bg-red-50; }
+  .btn-sm { @apply px-2.5 py-1.5 text-xs; }
+  .input { @apply block w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-100 disabled:bg-slate-50; }
+  .label { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5; }
+  .num { @apply font-mono tabular-nums; }
+  .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500; }
+}
+
+.scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #d6d2c8; border-radius: 8px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
