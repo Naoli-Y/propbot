@@ -10,7 +10,7 @@ import LeadPage from './pages/LeadPage.jsx';
 import NewLead from './pages/NewLead.jsx';
 import ImportLeads from './pages/ImportLeads.jsx';
 import Settings from './pages/Settings.jsx';
-
+ 
 function Protected({ children, write }) {
   const { user, loading, canWrite } = useAuth();
   const location = useLocation();
@@ -19,7 +19,7 @@ function Protected({ children, write }) {
   if (write && !canWrite) return <Navigate to="/" replace />;
   return children;
 }
-
+//new
 export default function App() {
   return (
     <Routes>
