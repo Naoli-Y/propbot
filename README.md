@@ -101,6 +101,17 @@ How it's built: `tailwind.config.js` uses `darkMode: 'class'`; the slate scale a
 
 ---
 
+## Forgot password
+
+- **Sign-in page → “Forgot password?”** — the user enters their email and receives a one-time link (valid 60 minutes) to `/reset-password/<token>`. The response is identical whether or not the email exists, and requests are rate-limited.
+- **Admins** (permission `users.manage`) can click **Reset** next to any user in *Settings → Team* to email them a link.
+- Only a SHA-256 hash of the token is stored; it's single-use. Changing or resetting a password signs the user out of every other device.
+- **Without SendGrid** the link can't be emailed: it is written to the server log (`docker compose logs app | grep "reset"`), and when an admin sends it from the Team page the link is shown on screen to copy. Set `PUBLIC_APP_URL` so links point at your public address.
+
+API: `POST /api/auth/forgot-password`, `GET /api/auth/reset-password/:token`, `POST /api/auth/reset-password`, `POST /api/auth/users/:id/send-reset`.
+
+---
+
 ## Quick start (local)
 
 **Requirements:** Node.js 20+, MongoDB 6+ (local, Docker, or a free MongoDB Atlas M0 cluster).

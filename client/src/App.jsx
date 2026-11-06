@@ -3,6 +3,8 @@ import { useAuth } from './context/AuthContext.jsx';
 import Layout from './components/Layout.jsx';
 import { PageLoader } from './components/ui.jsx';
 import Login from './pages/Login.jsx';
+import ForgotPassword from './pages/ForgotPassword.jsx';
+import ResetPassword from './pages/ResetPassword.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Pipeline from './pages/Pipeline.jsx';
 import Leads from './pages/Leads.jsx';
@@ -43,6 +45,8 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       {/* Public website + seller portal (no login) */}
       <Route path="/sell" element={<SellLanding />} />
       <Route path="/offer" element={<OfferLookup />} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Gauge, MapPin, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { errorMessage } from '../lib/api.js';
@@ -59,11 +59,16 @@ export default function Login() {
         <form onSubmit={submit} className="w-full max-w-sm">
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Sign in</h2>
           <p className="mt-1 text-sm text-slate-500">Use your acquisition team account.</p>
+          {location.state?.message && <p className="mt-6 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{location.state.message}</p>}
           <div className="mt-8 space-y-4">
             <label className="block"><span className="label">Email</span>
               <input className="input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
             </label>
-            <label className="block"><span className="label">Password</span>
+            <label className="block">
+              <span className="mb-1.5 flex items-center justify-between">
+                <span className="label !mb-0">Password</span>
+                <Link to="/forgot-password" className="text-xs font-semibold text-ink-600 hover:underline">Forgot password?</Link>
+              </span>
               <input className="input" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
             </label>
             {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
@@ -72,7 +77,6 @@ export default function Login() {
             </button>
           </div>
           <p className="mt-6 text-sm"><a href="/sell" className="font-semibold text-ink-600 hover:underline">Selling a house? Get a cash offer →</a></p>
-          <p className="mt-3 text-xs text-slate-400">First run? The admin account comes from <code className="font-mono">ADMIN_EMAIL</code> / <code className="font-mono">ADMIN_PASSWORD</code> in the server&apos;s .env.</p>
         </form>
       </div>
     </div>

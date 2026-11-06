@@ -133,6 +133,18 @@ export async function sendEmail({ to, subject, text, html, categories = [] }) {
   );
 }
 
+/** Password reset link for a team member. */
+export function buildPasswordResetEmail(user, { link, minutes, requestedByAdmin }) {
+  const name = firstName(user.name);
+  const subject = 'Reset your PropBot password';
+  const intro = requestedByAdmin
+    ? 'An administrator sent you a link to set a new password for your PropBot account.'
+    : 'We received a request to reset the password for your PropBot account.';
+  const text = `Hi ${name},\n\n${intro}\n\nSet a new password: ${link}\n\nThis link works once and expires in ${minutes} minutes. If you didn't ask for this, you can ignore this email — your password won't change.\n\n— PropBot`;
+  const html = wrapHtml(`<p>Hi ${escapeHtml(name)},</p><p>${escapeHtml(intro)}</p>${buttonHtml('Set a new password', link)}<p style="color:#6b7680;font-size:13px">This link works once and expires in ${minutes} minutes. If you didn't ask for this, you can ignore this email — your password won't change.</p>`);
+  return { subject, text, html };
+}
+
 /** Internal alert to the team (DIGEST_RECIPIENTS). Never throws. */
 export async function notifyTeam(subject, lines) {
   if (!env.sendgrid.digestRecipients.length) return { status: 'skipped' };

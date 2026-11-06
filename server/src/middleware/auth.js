@@ -24,7 +24,10 @@ async function userFromBearer(req) {
   try {
     const payload = jwt.verify(token, env.jwtSecret);
     const user = await User.findById(payload.sub);
-    return user && user.active ? user : null;
+    if (!user || !user.active) return null;
+    // Password was reset/changed after this token was issued → force a new login.
+    if (user.password_changed_at && payload.iat * 1000 < user.password_changed_at.getTime() - 1000) return null;
+    return user;
   } catch {
     return null;
   }

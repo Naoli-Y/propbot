@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bot, MapPin, Mail, Database, Play, Copy, CheckCircle2, XCircle, Webhook, CalendarClock, Users, KeyRound, Plug, Globe, ShieldCheck } from 'lucide-react';
-import { api, errorMessage } from '../lib/api.js';
+import { api, errorMessage, tokenStore } from '../lib/api.js';
 import { dateTime } from '../lib/format.js';
 import { PageHeader } from '../components/Layout.jsx';
 import { Field, Modal, PageLoader, Spinner } from '../components/ui.jsx';
@@ -205,9 +205,10 @@ function Profile() {
       const body = { name };
       if (pw.newPassword) Object.assign(body, pw);
       const { data } = await api.patch('/auth/me', body);
+      if (data.token) tokenStore.set(data.token); // password change signs out other devices, keeps this one
       setUser(data.user);
       setPw({ currentPassword: '', newPassword: '' });
-      toast('Profile saved');
+      toast(pw.newPassword ? 'Password changed — other devices have been signed out' : 'Profile saved');
     } catch (err) { toast(errorMessage(err), 'error'); } finally { setBusy(false); }
   };
 

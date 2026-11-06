@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { UserPlus, Trash2, ShieldCheck, Lock, Plus, RotateCcw, Pencil, SlidersHorizontal, Check, Minus, Save, Undo2 } from 'lucide-react';
+import { UserPlus, Trash2, ShieldCheck, Lock, Plus, RotateCcw, Pencil, SlidersHorizontal, Check, Minus, Save, Undo2, KeyRound, Copy } from 'lucide-react';
 import { api, errorMessage } from '../lib/api.js';
 import { dateTime } from '../lib/format.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -340,6 +340,16 @@ export function Team() {
   const [busy, setBusy] = useState(false);
   const [del, setDel] = useState(null);
   const [permsFor, setPermsFor] = useState(null);
+  const [resetFor, setResetFor] = useState(null); // { user, link? , done }
+
+  const sendReset = async () => {
+    setBusy(true);
+    try {
+      const { data } = await api.post(`/auth/users/${resetFor.user.id}/send-reset`);
+      if (data.link) setResetFor((r) => ({ ...r, link: data.link, done: true }));
+      else { toast(`Reset link emailed to ${resetFor.user.email}`); setResetFor(null); }
+    } catch (err) { toast(errorMessage(err), 'error'); } finally { setBusy(false); }
+  };
 
   const load = useCallback(() => api.get('/auth/users').then((r) => setUsers(r.data.users)).catch((e) => toast(errorMessage(e), 'error')), [toast]);
   useEffect(() => { load(); }, [load]);
@@ -393,6 +403,7 @@ export function Team() {
                 {(locked(u) ? roles : assignable).map((r) => <option key={r.key} value={r.key}>{r.name}</option>)}
               </select>
               <button className="btn-secondary btn-sm" disabled={locked(u)} onClick={() => setPermsFor(u)} title="Personal permissions"><SlidersHorizontal className="h-3.5 w-3.5" />Permissions</button>
+              <button className="btn-ghost btn-sm" disabled={locked(u) || !u.active} onClick={() => setResetFor({ user: u })} title="Send password reset link"><KeyRound className="h-3.5 w-3.5" />Reset</button>
               <label className="flex items-center gap-1.5 text-xs text-slate-500">
                 <input type="checkbox" className="accent-ink-900" checked={u.active} disabled={locked(u)} onChange={(e) => patch(u, { active: e.target.checked })} />Active
               </label>
@@ -417,6 +428,22 @@ export function Team() {
         </form>
       </Modal>
       <UserPermissionsModal user={permsFor} roles={assignable} groups={groups} catalog={catalog} open={Boolean(permsFor)} onClose={() => setPermsFor(null)} onSaved={load} />
+      <Modal open={Boolean(resetFor)} onClose={() => setResetFor(null)} title="Reset password"
+        footer={resetFor?.done
+          ? <button className="btn-primary" onClick={() => setResetFor(null)}>Done</button>
+          : <><button className="btn-secondary" onClick={() => setResetFor(null)}>Cancel</button><button className="btn-primary" onClick={sendReset} disabled={busy}>{busy && <Spinner className="h-4 w-4 text-white" />}Send reset link</button></>}>
+        {resetFor?.done ? (
+          <div className="space-y-3 text-sm">
+            <p className="text-slate-600">Email isn’t set up (SendGrid), so send this one-time link to <strong>{resetFor.user.name}</strong> yourself. It expires in 60 minutes.</p>
+            <div className="flex gap-2">
+              <input className="input num text-xs" readOnly value={resetFor.link} onFocus={(e) => e.target.select()} />
+              <button className="btn-secondary" onClick={() => { navigator.clipboard?.writeText(resetFor.link); toast('Link copied'); }}><Copy className="h-4 w-4" /></button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-600">Email <strong>{resetFor?.user.name}</strong> ({resetFor?.user.email}) a one-time link to set a new password? Their current password keeps working until they use the link.</p>
+        )}
+      </Modal>
       <ConfirmModal open={Boolean(del)} onClose={() => setDel(null)} onConfirm={remove} busy={busy} danger confirmLabel="Remove" title="Remove user?" body={del ? `${del.name} (${del.email}) will lose access.` : ''} />
     </div>
   );
