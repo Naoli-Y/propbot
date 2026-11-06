@@ -77,8 +77,8 @@ export default function Dashboard() {
               <div className="mb-4 flex items-center justify-between">
                 <div><p className="eyebrow">Inbound volume</p><p className="mt-0.5 text-sm text-slate-500">Leads per day, hot leads highlighted</p></div>
                 <div className="flex items-center gap-3 text-xs text-slate-500">
-                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-200" />All</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-900" />Hot</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-200 dark:bg-ink-600" />All</span>
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm bg-ink-900 dark:bg-ink-300" />Hot</span>
                 </div>
               </div>
               <VolumeChart data={data.daily} />

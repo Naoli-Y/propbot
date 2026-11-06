@@ -92,6 +92,15 @@ API: `GET /api/roles`, `GET /api/roles/permissions`, `POST /api/roles`, `PATCH /
 
 ---
 
+## Dark mode
+
+Every screen (team dashboard, Investor desk, seller website and seller portal) supports **Light / Dark / System**.
+The switch is in the sidebar, the public site header, the login page and *Settings → Profile*; the choice is saved per device and "System" follows the OS setting.
+
+How it's built: `tailwind.config.js` uses `darkMode: 'class'`; the slate scale and the `paper`, `line`, `surface` and `well` colors read CSS variables defined in `client/src/index.css` (light on `:root`, dark on `html.dark`), so most of the UI themes itself. Tinted badges and alerts get dark equivalents at the bottom of `index.css`. `client/public/theme-init.js` applies the saved theme before first paint (no white flash).
+
+---
+
 ## Quick start (local)
 
 **Requirements:** Node.js 20+, MongoDB 6+ (local, Docker, or a free MongoDB Atlas M0 cluster).

@@ -6,6 +6,7 @@ import { PageHeader } from '../components/Layout.jsx';
 import { Field, Modal, PageLoader, Spinner } from '../components/ui.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Team, RolesEditor } from '../components/AccessControl.jsx';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
 function Status({ ok, okLabel = 'Connected', offLabel = 'Not configured' }) {
@@ -211,7 +212,12 @@ function Profile() {
   };
 
   return (
-    <form onSubmit={save} className="card max-w-lg space-y-4 p-5">
+    <div className="max-w-lg space-y-4">
+    <div className="card flex flex-wrap items-center justify-between gap-3 p-5">
+      <div><p className="text-sm font-bold text-slate-800">Appearance</p><p className="text-xs text-slate-500">Saved on this device. “System” follows your computer’s setting.</p></div>
+      <ThemeToggle showLabels={false} />
+    </div>
+    <form onSubmit={save} className="card space-y-4 p-5">
       <Field label="Name"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
       <Field label="Email"><input className="input" value={user.email} disabled /></Field>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -220,6 +226,7 @@ function Profile() {
       </div>
       <div className="flex justify-end"><button className="btn-primary" disabled={busy}>{busy && <Spinner className="h-4 w-4 text-white" />}Save</button></div>
     </form>
+    </div>
   );
 }
 

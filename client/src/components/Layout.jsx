@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, KanbanSquare, Table2, PlusCircle, Upload, Settings, LogOut, Menu, X, Landmark, Globe, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import ThemeToggle from './ThemeToggle.jsx';
 
 const NAV = [
   { to: '/', label: 'Overview', icon: LayoutDashboard, end: true, perm: 'dashboard.view' },
@@ -66,7 +67,7 @@ export default function Layout() {
       {/* Desktop sidebar */}
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col justify-between bg-ink-900 p-4 lg:flex">
         <div className="space-y-8"><div className="px-1 pt-1"><Brand /></div><NavItems /></div>
-        <UserBox />
+        <div className="space-y-3"><ThemeToggle variant="sidebar" showLabels /><UserBox /></div>
       </aside>
 
       {/* Mobile top bar */}
@@ -82,7 +83,7 @@ export default function Layout() {
               <div className="flex items-center justify-between"><Brand /><button onClick={() => setOpen(false)} className="p-1.5 text-ink-200" aria-label="Close menu"><X className="h-5 w-5" /></button></div>
               <NavItems onNavigate={() => setOpen(false)} />
             </div>
-            <UserBox />
+            <div className="space-y-3"><ThemeToggle variant="sidebar" showLabels /><UserBox /></div>
           </div>
         </div>
       )}

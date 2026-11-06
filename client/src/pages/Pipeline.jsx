@@ -155,14 +155,14 @@ export default function Pipeline() {
                   onDragOver={(e) => { e.preventDefault(); setDragOver(col.status); }}
                   onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null); }}
                   onDrop={(e) => { e.preventDefault(); onDrop(col.status); }}
-                  className={`flex w-[280px] shrink-0 flex-col rounded-2xl border transition ${droppable ? 'border-ink-400 bg-ink-50' : active ? 'border-red-200 bg-red-50/40' : 'border-transparent bg-[#efede7]'}`}
+                  className={`flex w-[280px] shrink-0 flex-col rounded-2xl border transition ${droppable ? 'border-ink-400 bg-ink-50' : active ? 'border-red-200 bg-red-50/40' : 'border-transparent bg-well'}`}
                 >
                   <header className="px-3 pb-2 pt-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`h-2 w-2 rounded-full ${style.dot}`} />
                         <h2 className="text-sm font-extrabold text-slate-800">{col.status}</h2>
-                        <span className="num rounded-md bg-white px-1.5 text-xs font-semibold text-slate-500">{col.items.length}</span>
+                        <span className="num rounded-md bg-surface px-1.5 text-xs font-semibold text-slate-500">{col.items.length}</span>
                       </div>
                       <span className="num text-xs font-semibold text-slate-500">{money(col.value, { compact: true })}</span>
                     </div>

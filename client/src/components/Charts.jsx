@@ -14,15 +14,15 @@ export function VolumeChart({ data = [], height = 180 }) {
         </div>
         <div className="relative flex-1">
           <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="w-full" style={{ height: height - 20 }} onMouseLeave={() => setHover(null)}>
-            {ticks.map((t) => <line key={t} x1="0" x2="100" y1={(height - 20) * (1 - t / max)} y2={(height - 20) * (1 - t / max)} stroke="#ece9e2" strokeWidth="0.6" vectorEffect="non-scaling-stroke" />)}
+            {ticks.map((t) => <line key={t} x1="0" x2="100" y1={(height - 20) * (1 - t / max)} y2={(height - 20) * (1 - t / max)} style={{ stroke: 'var(--chart-grid)' }} strokeWidth="0.6" vectorEffect="non-scaling-stroke" />)}
             {data.map((d, i) => {
               const h = ((height - 20) * d.count) / max;
               const hh = ((height - 20) * d.hot) / max;
               return (
                 <g key={d.date} onMouseEnter={() => setHover(i)}>
                   <rect x={i * w} y={0} width={w} height={height - 20} fill="transparent" />
-                  <rect x={i * w + w * 0.18} y={height - 20 - h} width={w * 0.64} height={h} rx="0.6" fill={hover === i ? '#5b9693' : '#b9d6d4'} />
-                  <rect x={i * w + w * 0.18} y={height - 20 - hh} width={w * 0.64} height={hh} rx="0.6" fill="#0f3d3e" />
+                  <rect x={i * w + w * 0.18} y={height - 20 - h} width={w * 0.64} height={h} rx="0.6" style={{ fill: hover === i ? 'var(--chart-bar-hover)' : 'var(--chart-bar)' }} />
+                  <rect x={i * w + w * 0.18} y={height - 20 - hh} width={w * 0.64} height={hh} rx="0.6" style={{ fill: 'var(--chart-hot)' }} />
                 </g>
               );
             })}
@@ -33,7 +33,7 @@ export function VolumeChart({ data = [], height = 180 }) {
             <span>{data.at(-1)?.date.slice(5)}</span>
           </div>
           {hover !== null && data[hover] && (
-            <div className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-lg bg-ink-950 px-2.5 py-1.5 text-xs text-white shadow-lift" style={{ left: `${(hover + 0.5) * w}%` }}>
+            <div className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-lg bg-ink-950 ring-1 ring-white/10 px-2.5 py-1.5 text-xs text-white shadow-lift" style={{ left: `${(hover + 0.5) * w}%` }}>
               <div className="font-mono text-[10px] text-ink-200">{data[hover].date}</div>
               <div>{data[hover].count} leads · <span className="text-ember-400">{data[hover].hot} hot</span></div>
             </div>
@@ -75,7 +75,7 @@ export function ScoreHistogram({ buckets = [], threshold = 70 }) {
         return (
           <div key={b.label} className="flex flex-1 flex-col items-center gap-1.5">
             <span className="font-mono text-[11px] tabular-nums text-slate-500">{b.count}</span>
-            <div className={`w-full rounded-t-md ${hot ? 'bg-ink-900' : lower >= 40 ? 'bg-ember-400' : 'bg-slate-300'}`} style={{ height: `${Math.max(4, (b.count / max) * 96)}px` }} />
+            <div className={`w-full rounded-t-md ${hot ? 'bg-ink-900 dark:bg-ink-300' : lower >= 40 ? 'bg-ember-400' : 'bg-slate-300'}`} style={{ height: `${Math.max(4, (b.count / max) * 96)}px` }} />
             <span className="font-mono text-[10px] text-slate-400">{b.label}</span>
           </div>
         );

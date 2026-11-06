@@ -35,7 +35,7 @@ function MapPanel({ lead }) {
   const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lead.latitude},${lead.longitude}`;
   return (
     <div>
-      <iframe title="Property location" src={src} className="h-48 w-full rounded-lg border border-line" loading="lazy" />
+      <iframe title="Property location" src={src} className="h-48 w-full rounded-lg border border-line dark:[filter:invert(0.9)_hue-rotate(180deg)_brightness(0.95)]" loading="lazy" />
       <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
         <span className="num">{lead.latitude.toFixed(5)}, {lead.longitude.toFixed(5)}</span>
         <a className="inline-flex items-center gap-1 font-semibold text-ink-600 hover:underline" target="_blank" rel="noreferrer" href={`https://www.openstreetmap.org/?mlat=${lead.latitude}&mlon=${lead.longitude}#map=17/${lead.latitude}/${lead.longitude}`}>Open map <ExternalLink className="h-3 w-3" /></a>
@@ -310,7 +310,7 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
   return (
     <div className="pb-10">
       {/* Header */}
-      <div className="border-b border-line bg-white px-5 py-5 sm:px-6">
+      <div className="border-b border-line bg-surface px-5 py-5 sm:px-6">
         <div className="flex items-start gap-4">
           <ScoreBadge score={lead.viability_score} size="lg" threshold={threshold} />
           <div className="min-w-0 flex-1">

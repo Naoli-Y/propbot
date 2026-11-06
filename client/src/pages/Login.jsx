@@ -4,6 +4,7 @@ import { ArrowRight, Gauge, MapPin, Mail } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { errorMessage } from '../lib/api.js';
 import { Spinner } from '../components/ui.jsx';
+import ThemeToggle from '../components/ThemeToggle.jsx';
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -53,7 +54,8 @@ export default function Login() {
         <p className="relative text-xs text-ink-300">Inbound → Underwritten → Offer Drafted → Awaiting Approval → Outreach Sent</p>
       </div>
 
-      <div className="flex items-center justify-center px-5 py-12">
+      <div className="relative flex items-center justify-center px-5 py-12">
+        <div className="absolute right-4 top-4"><ThemeToggle /></div>
         <form onSubmit={submit} className="w-full max-w-sm">
           <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Sign in</h2>
           <p className="mt-1 text-sm text-slate-500">Use your acquisition team account.</p>

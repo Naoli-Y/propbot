@@ -25,7 +25,7 @@ export function ScoreBadge({ score, size = 'md', threshold = 70 }) {
   if (score === null || score === undefined) {
     return <span className={`inline-flex items-center justify-center rounded-lg bg-slate-100 font-mono font-semibold text-slate-400 ${size === 'lg' ? 'h-16 w-16 text-xl' : size === 'sm' ? 'h-7 w-9 text-xs' : 'h-9 w-11 text-sm'}`}>—</span>;
   }
-  const tone = score >= threshold ? 'bg-ink-900 text-white' : score >= 45 ? 'bg-ember-100 text-ember-700' : 'bg-slate-100 text-slate-600';
+  const tone = score >= threshold ? 'bg-ink-900 text-white dark:bg-ink-300 dark:text-ink-950' : score >= 45 ? 'bg-ember-100 text-ember-700' : 'bg-slate-100 text-slate-600';
   const dims = size === 'lg' ? 'h-16 w-16 text-2xl rounded-2xl' : size === 'sm' ? 'h-7 w-9 text-xs rounded-md' : 'h-9 w-11 text-sm rounded-lg';
   return (
     <span className={`relative inline-flex items-center justify-center font-mono font-semibold tabular-nums ${tone} ${dims}`} title={`Viability score ${score}/100`}>

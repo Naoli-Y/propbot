@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../lib/api.js';
+import ThemeToggle from './ThemeToggle.jsx';
 
 let cachedCompany = null;
 
@@ -30,11 +31,12 @@ export default function PublicLayout({ children }) {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Link to="/sell" className="flex items-center gap-2.5">
             <Mark />
-            <span className="text-[15px] font-extrabold tracking-tight text-ink-900">{company}</span>
+            <span className="hidden text-[15px] font-extrabold tracking-tight text-ink-900 min-[400px]:inline">{company}</span>
           </Link>
           <nav className="flex items-center gap-1 text-sm font-semibold sm:gap-3">
             <Link to="/sell#how" className="hidden rounded-lg px-3 py-2 text-slate-600 hover:text-ink-900 sm:block">How it works</Link>
             <Link to="/offer" className="rounded-lg px-3 py-2 text-slate-600 hover:text-ink-900">Track my offer</Link>
+            <ThemeToggle />
             <Link to="/sell#get-offer" className="btn-accent hidden sm:inline-flex">Get my offer</Link>
           </nav>
         </div>

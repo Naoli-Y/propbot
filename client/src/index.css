@@ -2,27 +2,205 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme tokens ─────────────────────────────────────────
+   Light values on :root, dark values on html.dark. Tailwind's slate scale,
+   paper, line, surface and well read these, so most of the UI themes itself. */
+:root {
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
+  --paper: 247 246 242;
+  --line: 230 227 220;
+  --surface: 255 255 255;
+  --well: 239 237 231;
+  --chart-bar: #b9d6d4;
+  --chart-bar-hover: #5b9693;
+  --chart-hot: #0f3d3e;
+  --chart-grid: #ece9e2;
+  color-scheme: light;
+}
+html.dark {
+  --slate-50: 27 35 39;
+  --slate-100: 35 45 50;
+  --slate-200: 46 58 64;
+  --slate-300: 70 83 90;
+  --slate-400: 111 125 132;
+  --slate-500: 142 155 161;
+  --slate-600: 169 181 186;
+  --slate-700: 196 205 209;
+  --slate-800: 221 228 231;
+  --slate-900: 238 242 244;
+  --slate-950: 247 249 250;
+  --paper: 14 19 21;
+  --line: 38 48 53;
+  --surface: 21 28 31;
+  --well: 17 24 27;
+  --chart-bar: #2c6260;
+  --chart-bar-hover: #5b9693;
+  --chart-hot: #8bb9b6;
+  --chart-grid: #263035;
+  color-scheme: dark;
+}
+
 @layer base {
   html { -webkit-font-smoothing: antialiased; }
-  body { @apply bg-paper text-slate-800 font-sans; }
-  ::selection { @apply bg-ember-100; }
+  body { @apply bg-paper text-slate-800 font-sans transition-colors duration-200; }
+  ::selection { @apply bg-ember-100 dark:bg-ember-500/30; }
 }
 
 @layer components {
-  .card { @apply bg-white border border-line rounded-xl shadow-card; }
+  .card { @apply bg-surface border border-line rounded-xl shadow-card dark:shadow-none; }
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-400 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap; }
-  .btn-primary { @apply btn bg-ink-900 text-white hover:bg-ink-800 active:bg-ink-950; }
+  .btn-primary { @apply btn bg-ink-900 text-white hover:bg-ink-800 active:bg-ink-950 dark:bg-ink-600 dark:hover:bg-ink-500; }
   .btn-accent { @apply btn bg-ember-500 text-white hover:bg-ember-600; }
-  .btn-secondary { @apply btn bg-white text-slate-700 border border-line hover:bg-slate-50; }
+  .btn-secondary { @apply btn bg-surface text-slate-700 border border-line hover:bg-slate-50; }
   .btn-ghost { @apply btn text-slate-600 hover:bg-slate-100; }
-  .btn-danger { @apply btn bg-white text-red-600 border border-red-200 hover:bg-red-50; }
+  .btn-danger { @apply btn bg-surface text-red-600 border border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-500/40 dark:hover:bg-red-500/10; }
   .btn-sm { @apply px-2.5 py-1.5 text-xs; }
-  .input { @apply block w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-100 disabled:bg-slate-50; }
+  .input { @apply block w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-ink-400 focus:outline-none focus:ring-2 focus:ring-ink-100 disabled:bg-slate-50 dark:focus:ring-ink-400/30; }
   .label { @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1.5; }
   .num { @apply font-mono tabular-nums; }
   .eyebrow { @apply text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500; }
 }
 
 .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: #d6d2c8; border-radius: 8px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { border-radius: 8px; }
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgb(var(--slate-300)); }
+
+/* ─── Dark mode: tinted badges, alerts and links ──────────────
+   Light-mode tints (bg-*-50/100, text-*-700…) become translucent tints
+   and light text, so status pills and alerts stay readable on dark surfaces. */
+.dark .bg-emerald-50, .dark .hover\:bg-emerald-50:hover { background-color: rgb(16 185 129 / 0.12); }
+.dark .bg-emerald-100, .dark .hover\:bg-emerald-100:hover { background-color: rgb(16 185 129 / 0.18); }
+.dark .bg-emerald-200, .dark .hover\:bg-emerald-200:hover { background-color: rgb(16 185 129 / 0.26); }
+.dark .text-emerald-600, .dark .hover\:text-emerald-600:hover, .dark .group:hover .group-hover\:text-emerald-600 { color: #6ee7b7; }
+.dark .text-emerald-700, .dark .hover\:text-emerald-700:hover, .dark .group:hover .group-hover\:text-emerald-700 { color: #6ee7b7; }
+.dark .text-emerald-800, .dark .hover\:text-emerald-800:hover, .dark .group:hover .group-hover\:text-emerald-800 { color: #6ee7b7; }
+.dark .text-emerald-900, .dark .hover\:text-emerald-900:hover, .dark .group:hover .group-hover\:text-emerald-900 { color: #6ee7b7; }
+.dark .border-emerald-100, .dark .hover\:border-emerald-100:hover { border-color: rgb(16 185 129 / 0.4); }
+.dark .ring-emerald-100 { --tw-ring-color: rgb(16 185 129 / 0.4); }
+.dark .border-emerald-200, .dark .hover\:border-emerald-200:hover { border-color: rgb(16 185 129 / 0.4); }
+.dark .ring-emerald-200 { --tw-ring-color: rgb(16 185 129 / 0.4); }
+.dark .border-emerald-300, .dark .hover\:border-emerald-300:hover { border-color: rgb(16 185 129 / 0.4); }
+.dark .ring-emerald-300 { --tw-ring-color: rgb(16 185 129 / 0.4); }
+.dark .bg-red-50, .dark .hover\:bg-red-50:hover { background-color: rgb(239 68 68 / 0.12); }
+.dark .bg-red-100, .dark .hover\:bg-red-100:hover { background-color: rgb(239 68 68 / 0.18); }
+.dark .bg-red-200, .dark .hover\:bg-red-200:hover { background-color: rgb(239 68 68 / 0.26); }
+.dark .text-red-600, .dark .hover\:text-red-600:hover, .dark .group:hover .group-hover\:text-red-600 { color: #fca5a5; }
+.dark .text-red-700, .dark .hover\:text-red-700:hover, .dark .group:hover .group-hover\:text-red-700 { color: #fca5a5; }
+.dark .text-red-800, .dark .hover\:text-red-800:hover, .dark .group:hover .group-hover\:text-red-800 { color: #fca5a5; }
+.dark .text-red-900, .dark .hover\:text-red-900:hover, .dark .group:hover .group-hover\:text-red-900 { color: #fca5a5; }
+.dark .border-red-100, .dark .hover\:border-red-100:hover { border-color: rgb(239 68 68 / 0.4); }
+.dark .ring-red-100 { --tw-ring-color: rgb(239 68 68 / 0.4); }
+.dark .border-red-200, .dark .hover\:border-red-200:hover { border-color: rgb(239 68 68 / 0.4); }
+.dark .ring-red-200 { --tw-ring-color: rgb(239 68 68 / 0.4); }
+.dark .border-red-300, .dark .hover\:border-red-300:hover { border-color: rgb(239 68 68 / 0.4); }
+.dark .ring-red-300 { --tw-ring-color: rgb(239 68 68 / 0.4); }
+.dark .bg-rose-50, .dark .hover\:bg-rose-50:hover { background-color: rgb(244 63 94 / 0.12); }
+.dark .bg-rose-100, .dark .hover\:bg-rose-100:hover { background-color: rgb(244 63 94 / 0.18); }
+.dark .bg-rose-200, .dark .hover\:bg-rose-200:hover { background-color: rgb(244 63 94 / 0.26); }
+.dark .text-rose-600, .dark .hover\:text-rose-600:hover, .dark .group:hover .group-hover\:text-rose-600 { color: #fda4af; }
+.dark .text-rose-700, .dark .hover\:text-rose-700:hover, .dark .group:hover .group-hover\:text-rose-700 { color: #fda4af; }
+.dark .text-rose-800, .dark .hover\:text-rose-800:hover, .dark .group:hover .group-hover\:text-rose-800 { color: #fda4af; }
+.dark .text-rose-900, .dark .hover\:text-rose-900:hover, .dark .group:hover .group-hover\:text-rose-900 { color: #fda4af; }
+.dark .border-rose-100, .dark .hover\:border-rose-100:hover { border-color: rgb(244 63 94 / 0.4); }
+.dark .ring-rose-100 { --tw-ring-color: rgb(244 63 94 / 0.4); }
+.dark .border-rose-200, .dark .hover\:border-rose-200:hover { border-color: rgb(244 63 94 / 0.4); }
+.dark .ring-rose-200 { --tw-ring-color: rgb(244 63 94 / 0.4); }
+.dark .border-rose-300, .dark .hover\:border-rose-300:hover { border-color: rgb(244 63 94 / 0.4); }
+.dark .ring-rose-300 { --tw-ring-color: rgb(244 63 94 / 0.4); }
+.dark .bg-sky-50, .dark .hover\:bg-sky-50:hover { background-color: rgb(14 165 233 / 0.12); }
+.dark .bg-sky-100, .dark .hover\:bg-sky-100:hover { background-color: rgb(14 165 233 / 0.18); }
+.dark .bg-sky-200, .dark .hover\:bg-sky-200:hover { background-color: rgb(14 165 233 / 0.26); }
+.dark .text-sky-600, .dark .hover\:text-sky-600:hover, .dark .group:hover .group-hover\:text-sky-600 { color: #7dd3fc; }
+.dark .text-sky-700, .dark .hover\:text-sky-700:hover, .dark .group:hover .group-hover\:text-sky-700 { color: #7dd3fc; }
+.dark .text-sky-800, .dark .hover\:text-sky-800:hover, .dark .group:hover .group-hover\:text-sky-800 { color: #7dd3fc; }
+.dark .text-sky-900, .dark .hover\:text-sky-900:hover, .dark .group:hover .group-hover\:text-sky-900 { color: #7dd3fc; }
+.dark .border-sky-100, .dark .hover\:border-sky-100:hover { border-color: rgb(14 165 233 / 0.4); }
+.dark .ring-sky-100 { --tw-ring-color: rgb(14 165 233 / 0.4); }
+.dark .border-sky-200, .dark .hover\:border-sky-200:hover { border-color: rgb(14 165 233 / 0.4); }
+.dark .ring-sky-200 { --tw-ring-color: rgb(14 165 233 / 0.4); }
+.dark .border-sky-300, .dark .hover\:border-sky-300:hover { border-color: rgb(14 165 233 / 0.4); }
+.dark .ring-sky-300 { --tw-ring-color: rgb(14 165 233 / 0.4); }
+.dark .bg-violet-50, .dark .hover\:bg-violet-50:hover { background-color: rgb(139 92 246 / 0.12); }
+.dark .bg-violet-100, .dark .hover\:bg-violet-100:hover { background-color: rgb(139 92 246 / 0.18); }
+.dark .bg-violet-200, .dark .hover\:bg-violet-200:hover { background-color: rgb(139 92 246 / 0.26); }
+.dark .text-violet-600, .dark .hover\:text-violet-600:hover, .dark .group:hover .group-hover\:text-violet-600 { color: #c4b5fd; }
+.dark .text-violet-700, .dark .hover\:text-violet-700:hover, .dark .group:hover .group-hover\:text-violet-700 { color: #c4b5fd; }
+.dark .text-violet-800, .dark .hover\:text-violet-800:hover, .dark .group:hover .group-hover\:text-violet-800 { color: #c4b5fd; }
+.dark .text-violet-900, .dark .hover\:text-violet-900:hover, .dark .group:hover .group-hover\:text-violet-900 { color: #c4b5fd; }
+.dark .border-violet-100, .dark .hover\:border-violet-100:hover { border-color: rgb(139 92 246 / 0.4); }
+.dark .ring-violet-100 { --tw-ring-color: rgb(139 92 246 / 0.4); }
+.dark .border-violet-200, .dark .hover\:border-violet-200:hover { border-color: rgb(139 92 246 / 0.4); }
+.dark .ring-violet-200 { --tw-ring-color: rgb(139 92 246 / 0.4); }
+.dark .border-violet-300, .dark .hover\:border-violet-300:hover { border-color: rgb(139 92 246 / 0.4); }
+.dark .ring-violet-300 { --tw-ring-color: rgb(139 92 246 / 0.4); }
+.dark .bg-amber-50, .dark .hover\:bg-amber-50:hover { background-color: rgb(245 158 11 / 0.12); }
+.dark .bg-amber-100, .dark .hover\:bg-amber-100:hover { background-color: rgb(245 158 11 / 0.18); }
+.dark .bg-amber-200, .dark .hover\:bg-amber-200:hover { background-color: rgb(245 158 11 / 0.26); }
+.dark .text-amber-600, .dark .hover\:text-amber-600:hover, .dark .group:hover .group-hover\:text-amber-600 { color: #fcd34d; }
+.dark .text-amber-700, .dark .hover\:text-amber-700:hover, .dark .group:hover .group-hover\:text-amber-700 { color: #fcd34d; }
+.dark .text-amber-800, .dark .hover\:text-amber-800:hover, .dark .group:hover .group-hover\:text-amber-800 { color: #fcd34d; }
+.dark .text-amber-900, .dark .hover\:text-amber-900:hover, .dark .group:hover .group-hover\:text-amber-900 { color: #fcd34d; }
+.dark .border-amber-100, .dark .hover\:border-amber-100:hover { border-color: rgb(245 158 11 / 0.4); }
+.dark .ring-amber-100 { --tw-ring-color: rgb(245 158 11 / 0.4); }
+.dark .border-amber-200, .dark .hover\:border-amber-200:hover { border-color: rgb(245 158 11 / 0.4); }
+.dark .ring-amber-200 { --tw-ring-color: rgb(245 158 11 / 0.4); }
+.dark .border-amber-300, .dark .hover\:border-amber-300:hover { border-color: rgb(245 158 11 / 0.4); }
+.dark .ring-amber-300 { --tw-ring-color: rgb(245 158 11 / 0.4); }
+.dark .bg-orange-50, .dark .hover\:bg-orange-50:hover { background-color: rgb(249 115 22 / 0.12); }
+.dark .bg-orange-100, .dark .hover\:bg-orange-100:hover { background-color: rgb(249 115 22 / 0.18); }
+.dark .bg-orange-200, .dark .hover\:bg-orange-200:hover { background-color: rgb(249 115 22 / 0.26); }
+.dark .text-orange-600, .dark .hover\:text-orange-600:hover, .dark .group:hover .group-hover\:text-orange-600 { color: #fdba74; }
+.dark .text-orange-700, .dark .hover\:text-orange-700:hover, .dark .group:hover .group-hover\:text-orange-700 { color: #fdba74; }
+.dark .text-orange-800, .dark .hover\:text-orange-800:hover, .dark .group:hover .group-hover\:text-orange-800 { color: #fdba74; }
+.dark .text-orange-900, .dark .hover\:text-orange-900:hover, .dark .group:hover .group-hover\:text-orange-900 { color: #fdba74; }
+.dark .border-orange-100, .dark .hover\:border-orange-100:hover { border-color: rgb(249 115 22 / 0.4); }
+.dark .ring-orange-100 { --tw-ring-color: rgb(249 115 22 / 0.4); }
+.dark .border-orange-200, .dark .hover\:border-orange-200:hover { border-color: rgb(249 115 22 / 0.4); }
+.dark .ring-orange-200 { --tw-ring-color: rgb(249 115 22 / 0.4); }
+.dark .border-orange-300, .dark .hover\:border-orange-300:hover { border-color: rgb(249 115 22 / 0.4); }
+.dark .ring-orange-300 { --tw-ring-color: rgb(249 115 22 / 0.4); }
+.dark .bg-ember-50, .dark .hover\:bg-ember-50:hover { background-color: rgb(233 138 21 / 0.12); }
+.dark .bg-ember-100, .dark .hover\:bg-ember-100:hover { background-color: rgb(233 138 21 / 0.18); }
+.dark .bg-ember-200, .dark .hover\:bg-ember-200:hover { background-color: rgb(233 138 21 / 0.26); }
+.dark .text-ember-600, .dark .hover\:text-ember-600:hover, .dark .group:hover .group-hover\:text-ember-600 { color: #f6b866; }
+.dark .text-ember-700, .dark .hover\:text-ember-700:hover, .dark .group:hover .group-hover\:text-ember-700 { color: #f6b866; }
+.dark .text-ember-800, .dark .hover\:text-ember-800:hover, .dark .group:hover .group-hover\:text-ember-800 { color: #f6b866; }
+.dark .text-ember-900, .dark .hover\:text-ember-900:hover, .dark .group:hover .group-hover\:text-ember-900 { color: #f6b866; }
+.dark .border-ember-100, .dark .hover\:border-ember-100:hover { border-color: rgb(233 138 21 / 0.4); }
+.dark .ring-ember-100 { --tw-ring-color: rgb(233 138 21 / 0.4); }
+.dark .border-ember-200, .dark .hover\:border-ember-200:hover { border-color: rgb(233 138 21 / 0.4); }
+.dark .ring-ember-200 { --tw-ring-color: rgb(233 138 21 / 0.4); }
+.dark .border-ember-300, .dark .hover\:border-ember-300:hover { border-color: rgb(233 138 21 / 0.4); }
+.dark .ring-ember-300 { --tw-ring-color: rgb(233 138 21 / 0.4); }
+.dark .bg-ink-50, .dark .hover\:bg-ink-50:hover { background-color: rgb(91 150 147 / 0.12); }
+.dark .bg-ink-100, .dark .hover\:bg-ink-100:hover { background-color: rgb(91 150 147 / 0.18); }
+.dark .text-ink-600, .dark .hover\:text-ink-600:hover, .dark .group:hover .group-hover\:text-ink-600 { color: #9cc8c5; }
+.dark .text-ink-700, .dark .hover\:text-ink-700:hover, .dark .group:hover .group-hover\:text-ink-700 { color: #9cc8c5; }
+.dark .text-ink-800, .dark .hover\:text-ink-800:hover, .dark .group:hover .group-hover\:text-ink-800 { color: #9cc8c5; }
+.dark .text-ink-900, .dark .hover\:text-ink-900:hover, .dark .group:hover .group-hover\:text-ink-900 { color: #9cc8c5; }
+.dark .border-ink-100, .dark .hover\:border-ink-100:hover { border-color: rgb(91 150 147 / 0.4); }
+.dark .ring-ink-100 { --tw-ring-color: rgb(91 150 147 / 0.4); }
+.dark .border-ink-200, .dark .hover\:border-ink-200:hover { border-color: rgb(91 150 147 / 0.4); }
+.dark .ring-ink-200 { --tw-ring-color: rgb(91 150 147 / 0.4); }
+.dark .border-ink-300, .dark .hover\:border-ink-300:hover { border-color: rgb(91 150 147 / 0.4); }
+.dark .ring-ink-300 { --tw-ring-color: rgb(91 150 147 / 0.4); }
+.dark .bg-red-50\/40 { background-color: rgb(239 68 68 / 0.08); }
+.dark .text-emerald-800\/80 { color: rgb(110 231 183 / 0.8); }
+.dark .border-ink-900 { border-color: #8bb9b6; }
+.dark .bg-white { background-color: rgb(var(--surface)); }
+.dark .ring-white { --tw-ring-color: rgb(var(--surface)); }
+.dark .accent-ink-900 { accent-color: #5b9693; }
+.dark .text-ink-500 { color: #7fb0ad; }
+.dark .placeholder\:text-slate-400::placeholder, .dark .input::placeholder { color: rgb(var(--slate-400)); }

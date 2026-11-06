@@ -96,7 +96,7 @@ export default function SellLanding() {
     <PublicLayout>
       {/* Hero + form */}
       <section className="relative overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-ember-100/60 blur-3xl" />
+        <div className="absolute -left-40 -top-40 h-[480px] w-[480px] rounded-full bg-ember-100/60 blur-3xl dark:bg-ember-500/10" />
         <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:py-20">
           <div className="lg:pt-6">
             <p className="eyebrow !text-ember-700">Cash home buyers</p>
@@ -169,7 +169,7 @@ export default function SellLanding() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="scroll-mt-16 border-y border-line bg-white">
+      <section id="how" className="scroll-mt-16 border-y border-line bg-surface">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
           <p className="eyebrow">How it works</p>
           <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-ink-900">From first message to cash in hand</h2>
