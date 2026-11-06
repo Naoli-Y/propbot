@@ -38,3 +38,10 @@ export const SEVERITY_STYLE = {
 
 export const TIMELINE_OPTIONS = ['ASAP', 'Within 30 days', '1-3 months', '3-6 months', 'Flexible'];
 export const PROPERTY_TYPES = ['Single Family', 'Multi-Family', 'Condo', 'Townhouse', 'Mobile Home', 'Land', 'Other'];
+
+export const RESPONSE_STYLE = {
+  pending: { label: 'Awaiting seller', cls: 'bg-slate-100 text-slate-600' },
+  accepted: { label: 'Seller accepted', cls: 'bg-emerald-100 text-emerald-800' },
+  countered: { label: 'Seller countered', cls: 'bg-ember-100 text-ember-700' },
+  declined: { label: 'Seller declined', cls: 'bg-rose-100 text-rose-700' },
+};

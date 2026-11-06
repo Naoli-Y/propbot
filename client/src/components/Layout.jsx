@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, KanbanSquare, Table2, PlusCircle, Upload, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, Table2, PlusCircle, Upload, Settings, LogOut, Menu, X, Landmark, Globe, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const NAV = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/', label: 'Overview', icon: LayoutDashboard, end: true, hideFor: ['investor'] },
+  { to: '/investor', label: 'Investor desk', icon: Landmark, approve: true },
   { to: '/pipeline', label: 'Pipeline', icon: KanbanSquare },
   { to: '/leads', label: 'All leads', icon: Table2 },
   { to: '/leads/new', label: 'New lead', icon: PlusCircle, write: true },
@@ -27,15 +28,18 @@ function Brand() {
 }
 
 function NavItems({ onNavigate }) {
-  const { canWrite } = useAuth();
+  const { user, canWrite, canApprove } = useAuth();
   return (
     <nav className="flex flex-col gap-0.5">
-      {NAV.filter((n) => !n.write || canWrite).map(({ to, label, icon: Icon, end }) => (
+      {NAV.filter((n) => (!n.write || canWrite) && (!n.approve || canApprove) && !n.hideFor?.includes(user?.role)).map(({ to, label, icon: Icon, end }) => (
         <NavLink key={to} to={to} end={end ?? to === '/leads'} onClick={onNavigate}
           className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${isActive ? 'bg-white/10 text-white' : 'text-ink-200 hover:bg-white/5 hover:text-white'}`}>
           <Icon className="h-[18px] w-[18px]" />{label}
         </NavLink>
       ))}
+      <a href="/sell" target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-3 rounded-lg border border-white/10 px-3 py-2.5 text-sm font-semibold text-ink-200 transition hover:bg-white/5 hover:text-white">
+        <Globe className="h-[18px] w-[18px]" />Seller website<ExternalLink className="ml-auto h-3.5 w-3.5 opacity-60" />
+      </a>
     </nav>
   );
 }

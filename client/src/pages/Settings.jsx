@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bot, MapPin, Mail, Database, Play, Copy, CheckCircle2, XCircle, UserPlus, Trash2, Webhook, CalendarClock, Users, KeyRound, Plug } from 'lucide-react';
+import { Bot, MapPin, Mail, Database, Play, Copy, CheckCircle2, XCircle, UserPlus, Trash2, Webhook, CalendarClock, Users, KeyRound, Plug, Globe } from 'lucide-react';
 import { api, errorMessage } from '../lib/api.js';
 import { dateTime } from '../lib/format.js';
 import { PageHeader } from '../components/Layout.jsx';
@@ -54,6 +54,32 @@ function Integrations({ sys }) {
           <div><dt className="text-xs text-slate-500">Auto-queue for approval</dt><dd className="mt-0.5 text-lg font-semibold">{sys.rules.autoQueueForApproval ? 'On' : 'Off'}</dd></div>
         </dl>
         <p className="mt-3 text-xs text-slate-400">Configured with VIABILITY_THRESHOLD, STALE_LEAD_HOURS and AUTO_QUEUE_FOR_APPROVAL on the server.</p>
+      </div>
+    </div>
+  );
+}
+
+function PublicSite({ sys }) {
+  const origin = sys.publicSite?.url || window.location.origin;
+  const links = [
+    { label: '“Sell your house” website', url: `${origin}/sell`, desc: 'Share this link in ads, flyers and social posts. Submissions are underwritten instantly and land in Inbound with source “website”.' },
+    { label: 'Seller offer lookup', url: `${origin}/offer`, desc: 'Sellers who lost their private link can request it again with their email + reference number.' },
+  ];
+  return (
+    <div className="space-y-3">
+      {links.map((l) => (
+        <div key={l.url} className="card p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-bold text-slate-800">{l.label}</p>
+            <a href={l.url} target="_blank" rel="noreferrer" className="btn-secondary btn-sm">Open</a>
+          </div>
+          <p className="num mt-1 break-all text-xs text-ink-700">{l.url}</p>
+          <p className="mt-1 text-xs text-slate-500">{l.desc}</p>
+        </div>
+      ))}
+      <div className="card p-4 text-xs text-slate-500">
+        <p className="text-sm font-bold text-slate-800">Seller portal</p>
+        <p className="mt-1">Every offer email contains a private link (<span className="font-mono">/offer/…</span>) where the seller sees the offer and accepts, declines or counters. Responses appear on the Investor desk, in the lead timeline and in the daily digest. Brand name: <strong>{sys.publicSite?.company}</strong> (COMPANY_NAME). {sys.publicSite?.url ? '' : 'Set PUBLIC_APP_URL so email links use your public address.'}</p>
       </div>
     </div>
   );
@@ -212,7 +238,7 @@ function Team() {
               <p className="truncate text-xs text-slate-500">{u.email} · last login {u.last_login_at ? dateTime(u.last_login_at) : 'never'}</p>
             </div>
             <select className="input w-auto py-1.5 text-xs" value={u.role} disabled={u.id === me.id} onChange={(e) => patch(u, { role: e.target.value })} aria-label="Role">
-              <option value="admin">Admin</option><option value="manager">Manager</option><option value="viewer">Viewer</option>
+              <option value="admin">Admin</option><option value="manager">Manager</option><option value="investor">Investor</option><option value="viewer">Viewer</option>
             </select>
             <label className="flex items-center gap-1.5 text-xs text-slate-500">
               <input type="checkbox" className="accent-ink-900" checked={u.active} disabled={u.id === me.id} onChange={(e) => patch(u, { active: e.target.checked })} />Active
@@ -228,7 +254,7 @@ function Team() {
           <Field label="Temporary password" hint="At least 8 characters"><input className="input" type="password" minLength={8} required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
           <Field label="Role">
             <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-              <option value="manager">Manager — work leads, send offers</option><option value="viewer">Viewer — read only</option><option value="admin">Admin — full access</option>
+              <option value="manager">Manager — work leads, send offers</option><option value="investor">Investor — approve or reject offers</option><option value="viewer">Viewer — read only</option><option value="admin">Admin — full access</option>
             </select>
           </Field>
           <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={() => setAdding(false)}>Cancel</button><button className="btn-primary" disabled={busy}>{busy && <Spinner className="h-4 w-4 text-white" />}Create</button></div>
@@ -282,6 +308,7 @@ export default function Settings() {
   const tabs = [
     { key: 'integrations', label: 'Integrations', icon: Plug },
     { key: 'jobs', label: 'Automation', icon: CalendarClock },
+    { key: 'site', label: 'Seller website', icon: Globe },
     { key: 'api', label: 'Webhook & scheduler', icon: Webhook },
     ...(isAdmin ? [{ key: 'team', label: 'Team', icon: Users }] : []),
     { key: 'profile', label: 'Profile', icon: KeyRound },
@@ -297,11 +324,12 @@ export default function Settings() {
           </button>
         ))}
       </div>
-      {['integrations', 'api'].includes(tab) && !sys ? <PageLoader /> : (
+      {['integrations', 'api', 'site'].includes(tab) && !sys ? <PageLoader /> : (
         <>
           {tab === 'integrations' && <Integrations sys={sys} />}
           {tab === 'jobs' && <Jobs canRun={canWrite} />}
           {tab === 'api' && <Integration sys={sys} />}
+          {tab === 'site' && <PublicSite sys={sys} />}
           {tab === 'team' && isAdmin && <Team />}
           {tab === 'profile' && <Profile />}
         </>

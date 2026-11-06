@@ -13,6 +13,7 @@ import authRouter from './routes/auth.js';
 import statsRouter from './routes/stats.js';
 import jobsRouter from './routes/jobs.js';
 import systemRouter from './routes/system.js';
+import publicRouter from './routes/public.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -67,6 +68,7 @@ export function createApp() {
   app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Rate limit exceeded' } }));
 
   app.use('/api', systemRouter);
+  app.use('/api', publicRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/leads', leadsRouter);
   app.use('/api/stats', statsRouter);

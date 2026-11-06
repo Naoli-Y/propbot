@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Loader2, X, Flame, Clock } from 'lucide-react';
-import { STATUS_STYLE } from '../lib/constants.js';
+import { STATUS_STYLE, RESPONSE_STYLE } from '../lib/constants.js';
 
 export function Spinner({ className = 'h-5 w-5' }) {
   return <Loader2 className={`animate-spin text-ink-500 ${className}`} />;
@@ -123,4 +123,11 @@ export function ConfirmModal({ open, title, body, confirmLabel = 'Confirm', dang
       <p className="text-sm text-slate-600">{body}</p>
     </Modal>
   );
+}
+
+export function ResponseTag({ response }) {
+  if (!response?.status) return null;
+  const r = RESPONSE_STYLE[response.status];
+  if (!r) return null;
+  return <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${r.cls}`}>{r.label}</span>;
 }

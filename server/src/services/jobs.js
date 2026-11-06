@@ -78,16 +78,17 @@ export async function processPendingLeads({ limit = 25 } = {}) {
 
 export async function buildDigest() {
   const since = new Date(Date.now() - 24 * 3600 * 1000);
-  const [byStatus, newLeads, hot, stale, sent] = await Promise.all([
+  const [byStatus, newLeads, hot, stale, sent, responses] = await Promise.all([
     Lead.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
     Lead.countDocuments({ created_at: { $gte: since } }),
     Lead.find({ status: { $in: ['Offer Drafted', 'Awaiting Approval'] }, viability_score: { $gte: env.rules.viabilityThreshold } })
       .sort({ viability_score: -1 }).limit(10).lean(),
     Lead.find({ is_stale: true }).sort({ status_changed_at: 1 }).limit(10).lean(),
     Lead.countDocuments({ 'outreach.sent_at': { $gte: since } }),
+    Lead.find({ 'seller_response.responded_at': { $gte: since } }).lean(),
   ]);
   const counts = Object.fromEntries(byStatus.map((s) => [s._id, s.count]));
-  return { since, newLeads, outreachLast24h: sent, counts, hot, stale };
+  return { since, newLeads, outreachLast24h: sent, counts, hot, stale, responses };
 }
 
 export function renderDigest(d) {
@@ -107,6 +108,9 @@ export function renderDigest(d) {
     '',
     `Stale hot leads (${d.stale.length}):`,
     ...(d.stale.length ? d.stale.map((l) => `  • ${row(l)}`) : ['  none']),
+    '',
+    `Seller responses (24h): ${d.responses.length}`,
+    ...d.responses.map((l) => `  • ${l.seller_response.status}${l.seller_response.counter_offer ? ` at ${money(l.seller_response.counter_offer)}` : ''} — ${l.property_address}`),
   ].join('\n');
 
   const li = (l) => `<tr><td style="padding:6px 8px;font-weight:600">${l.viability_score ?? '—'}</td><td style="padding:6px 8px">${l.property_address}</td><td style="padding:6px 8px">${l.status}</td><td style="padding:6px 8px">${money(l.estimated_offer_min)}–${money(l.estimated_offer_max)}</td></tr>`;
@@ -116,7 +120,8 @@ export function renderDigest(d) {
 <p><strong>${d.newLeads}</strong> new leads and <strong>${d.outreachLast24h}</strong> outreach emails in the last 24 hours.</p>
 <p>${PIPELINE_STAGES.map((s) => `${s}: <strong>${d.counts[s] || 0}</strong>`).join(' · ')}</p>
 <h3>Hot leads awaiting action</h3>${table(d.hot)}
-<h3>Stale hot leads</h3>${table(d.stale)}</div>`;
+<h3>Stale hot leads</h3>${table(d.stale)}
+<h3>Seller responses (24h)</h3>${d.responses.length ? `<ul>${d.responses.map((l) => `<li><strong>${l.seller_response.status}</strong>${l.seller_response.counter_offer ? ` at ${money(l.seller_response.counter_offer)}` : ''} — ${l.property_address}</li>`).join('')}</ul>` : '<p style="color:#6b7680">None</p>'}</div>`;
   return { subject: `PropBot digest: ${d.hot.length} hot, ${d.stale.length} stale, ${d.newLeads} new`, text, html };
 }
 

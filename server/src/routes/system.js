@@ -28,6 +28,7 @@ router.get('/system/status', requireUser, (req, res) => {
       sendgrid: { enabled: sendgridEnabled(), from: env.sendgrid.fromEmail || null, digestRecipients: env.sendgrid.digestRecipients.length, mode: sendgridEnabled() ? 'live' : 'simulated' },
     },
     rules: env.rules,
+    publicSite: { company: env.companyName, url: env.publicAppUrl || null, sellPath: '/sell', portalPath: '/offer' },
     queue: queueStatus(),
     webhook: {
       endpoint: '/api/leads',

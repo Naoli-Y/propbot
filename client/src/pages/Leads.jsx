@@ -5,12 +5,12 @@ import { api, downloadFile, errorMessage } from '../lib/api.js';
 import { money, timeAgo } from '../lib/format.js';
 import { ALL_STATUSES } from '../lib/constants.js';
 import { PageHeader } from '../components/Layout.jsx';
-import { ConfirmModal, Drawer, EmptyState, Modal, PageLoader, ScoreBadge, Spinner, StaleTag, StatusPill } from '../components/ui.jsx';
+import { ConfirmModal, Drawer, EmptyState, Modal, PageLoader, ScoreBadge, Spinner, StaleTag, StatusPill, ResponseTag } from '../components/ui.jsx';
 import LeadDetail from '../components/LeadDetail.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
-const FILTER_KEYS = ['q', 'status', 'priority', 'minScore', 'stale', 'sort', 'page'];
+const FILTER_KEYS = ['q', 'status', 'priority', 'minScore', 'stale', 'response', 'source', 'sort', 'page'];
 
 export default function Leads() {
   const toast = useToast();
@@ -106,7 +106,7 @@ export default function Leads() {
       />
 
       <div className="card mb-4 p-3">
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto_auto]">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto_auto_auto]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input className="input pl-9" placeholder="Search address, seller, email, tag" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -119,6 +119,9 @@ export default function Leads() {
           </select>
           <select className="input lg:w-36" value={filters.minScore} onChange={(e) => setFilter('minScore', e.target.value)} aria-label="Minimum score">
             <option value="">Any score</option><option value="40">40+</option><option value="60">60+</option><option value="70">70+</option><option value="80">80+</option>
+          </select>
+          <select className="input lg:w-40" value={filters.response} onChange={(e) => setFilter('response', e.target.value)} aria-label="Seller response">
+            <option value="">Any response</option><option value="pending">Awaiting seller</option><option value="accepted">Accepted</option><option value="countered">Countered</option><option value="declined">Declined</option>
           </select>
           <select className="input lg:w-40" value={filters.sort} onChange={(e) => setFilter('sort', e.target.value)} aria-label="Sort">
             <option value="">Newest first</option><option value="oldest">Oldest first</option><option value="score">Highest score</option><option value="score_asc">Lowest score</option><option value="price">Highest price</option><option value="price_asc">Lowest price</option><option value="updated">Recently updated</option>
@@ -167,7 +170,7 @@ export default function Leads() {
                       <p className="truncate font-semibold text-slate-800">{l.property_address}</p>
                       <p className="truncate text-xs text-slate-400">{[l.property_type, l.bedrooms && `${l.bedrooms} bd`, l.square_feet && `${l.square_feet} sqft`].filter(Boolean).join(' · ') || l.source}</p>
                     </td>
-                    <td className="px-3 py-3"><div className="flex items-center gap-1.5"><StatusPill status={l.status} size="sm" />{l.is_stale && <StaleTag />}</div></td>
+                    <td className="px-3 py-3"><div className="flex flex-wrap items-center gap-1.5"><StatusPill status={l.status} size="sm" />{l.is_stale && <StaleTag />}{l.seller_response?.status !== 'pending' && <ResponseTag response={l.seller_response} />}</div></td>
                     <td className="num px-3 py-3 text-right text-slate-600">{money(l.asking_price)}</td>
                     <td className="num px-3 py-3 text-right font-semibold text-slate-800">{l.estimated_offer_max != null ? `${money(l.estimated_offer_min, { compact: true })}–${money(l.estimated_offer_max, { compact: true })}` : '—'}</td>
                     <td className="px-3 py-3"><p className="truncate text-slate-700">{l.seller_name || '—'}</p><p className="truncate text-xs text-slate-400">{l.seller_timeline}</p></td>

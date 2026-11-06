@@ -10,22 +10,37 @@ import LeadPage from './pages/LeadPage.jsx';
 import NewLead from './pages/NewLead.jsx';
 import ImportLeads from './pages/ImportLeads.jsx';
 import Settings from './pages/Settings.jsx';
- 
-function Protected({ children, write }) {
-  const { user, loading, canWrite } = useAuth();
+import InvestorDesk from './pages/InvestorDesk.jsx';
+import SellLanding from './pages/public/SellLanding.jsx';
+import SellerPortal from './pages/public/SellerPortal.jsx';
+import OfferLookup from './pages/public/OfferLookup.jsx';
+
+function Protected({ children, write, approve }) {
+  const { user, loading, canWrite, canApprove } = useAuth();
   const location = useLocation();
   if (loading) return <div className="flex min-h-screen items-center justify-center"><PageLoader /></div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   if (write && !canWrite) return <Navigate to="/" replace />;
+  if (approve && !canApprove) return <Navigate to="/" replace />;
   return children;
 }
-//new
+
+function Home() {
+  const { isInvestor } = useAuth();
+  return isInvestor ? <Navigate to="/investor" replace /> : <Dashboard />;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      {/* Public website + seller portal (no login) */}
+      <Route path="/sell" element={<SellLanding />} />
+      <Route path="/offer" element={<OfferLookup />} />
+      <Route path="/offer/:token" element={<SellerPortal />} />
       <Route element={<Protected><Layout /></Protected>}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<Home />} />
+        <Route path="investor" element={<Protected approve><InvestorDesk /></Protected>} />
         <Route path="pipeline" element={<Pipeline />} />
         <Route path="leads" element={<Leads />} />
         <Route path="leads/new" element={<Protected write><NewLead /></Protected>} />

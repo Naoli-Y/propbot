@@ -5,6 +5,7 @@ import { underwriteWithGemini, geminiEnabled } from './gemini.js';
 import { heuristicUnderwrite } from './heuristics.js';
 import { transition, statusAfterUnderwriting } from './stateMachine.js';
 import { buildSellerEmail, sendEmail } from './email.js';
+import { ensurePortalToken, portalUrl } from './portal.js';
 
 // Overall time budget for ingestion → score (PRD: < 3 s). External calls past the
 // budget stop retrying; the deterministic engine fills any gap.
@@ -99,15 +100,17 @@ export async function processLead(lead, { actor = 'system' } = {}) {
 }
 
 /** Sends a seller email for a lead and records it in outreach + timeline. */
-export async function sendOutreach(lead, { kind = 'cash_offer', offer, note, subject, body, actor = 'system' } = {}) {
+export async function sendOutreach(lead, { kind = 'cash_offer', offer, note, subject, body, actor = 'system', base } = {}) {
   if (!lead.seller_email) {
     const err = new Error('This lead has no seller email address');
     err.status = 422;
     throw err;
   }
-  const tpl = buildSellerEmail(lead, kind, { offer, note });
+  const token = await ensurePortalToken(lead);
+  const link = base ? portalUrl(base, token) : undefined;
+  const tpl = buildSellerEmail(lead, kind, { offer, note, portalUrl: link });
   const finalSubject = subject || tpl.subject;
-  const text = body || tpl.text;
+  const text = body ? (link ? `${body}\n\nView and respond online: ${link}` : body) : tpl.text;
   const html = body ? undefined : tpl.html;
 
   let result;

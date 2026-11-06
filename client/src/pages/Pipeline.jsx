@@ -5,7 +5,7 @@ import { api, errorMessage } from '../lib/api.js';
 import { money, timeAgo, shortAddress } from '../lib/format.js';
 import { STAGES, STATUS_STYLE, STAGE_HINT, TRANSITIONS } from '../lib/constants.js';
 import { PageHeader } from '../components/Layout.jsx';
-import { Drawer, PageLoader, ScoreBadge, StaleTag } from '../components/ui.jsx';
+import { Drawer, PageLoader, ScoreBadge, StaleTag, ResponseTag } from '../components/ui.jsx';
 import LeadDetail from '../components/LeadDetail.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -39,6 +39,9 @@ function LeadCard({ lead, threshold, onOpen, draggable, onDragStart }) {
           <p className="num text-sm text-slate-600">{money(lead.asking_price, { compact: true })}</p>
         </div>
       </div>
+      {lead.seller_response?.status && lead.seller_response.status !== 'pending' && (
+        <div className="mt-2 flex items-center gap-2"><ResponseTag response={lead.seller_response} />{lead.seller_response.counter_offer && <span className="num text-[11px] font-semibold text-ember-700">{money(lead.seller_response.counter_offer, { compact: true })}</span>}</div>
+      )}
       <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-line pt-2 text-[11px] text-slate-400">
         <span className="truncate">{lead.seller_name || 'Unknown seller'}{lead.seller_timeline ? ` · ${lead.seller_timeline}` : ''}</span>
         {lead.is_stale ? <StaleTag /> : <span className="shrink-0">{timeAgo(lead.status_changed_at)}</span>}

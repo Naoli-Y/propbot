@@ -89,4 +89,56 @@ router.get(
   })
 );
 
+// ─── Investor desk ───────────────────────────────────────────
+router.get(
+  '/investor',
+  asyncHandler(async (_req, res) => {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const offerValue = { $ifNull: ['$approved_offer', { $ifNull: ['$estimated_offer_max', 0] }] };
+
+    const [queue, approvedMonth, responseCounts, responses, offersSent] = await Promise.all([
+      Lead.find({ status: 'Awaiting Approval' }, '-timeline -outreach -property_condition').sort({ viability_score: -1, status_changed_at: 1 }).limit(100),
+      Lead.aggregate([
+        { $match: { outreach: { $elemMatch: { kind: 'cash_offer', status: { $in: ['sent', 'simulated'] }, sent_at: { $gte: monthStart } } } } },
+        { $group: { _id: null, count: { $sum: 1 }, value: { $sum: offerValue } } },
+      ]),
+      Lead.aggregate([
+        { $match: { 'seller_response.status': { $in: ['pending', 'accepted', 'declined', 'countered'] } } },
+        { $group: { _id: '$seller_response.status', count: { $sum: 1 }, value: { $sum: offerValue }, counter: { $sum: { $ifNull: ['$seller_response.counter_offer', 0] } } } },
+      ]),
+      Lead.find({ 'seller_response.status': { $in: ['accepted', 'countered', 'declined'] } },
+        'property_address seller_name seller_email approved_offer estimated_market_value estimated_offer_max viability_score status seller_response status_changed_at')
+        .sort({ 'seller_response.responded_at': -1 }).limit(25),
+      Lead.countDocuments({ approved_offer: { $gt: 0 }, outreach: { $elemMatch: { kind: 'cash_offer' } } }),
+    ]);
+
+    const rc = Object.fromEntries(responseCounts.map((r) => [r._id, r]));
+    const pendingValue = queue.reduce((s, l) => s + (l.approved_offer || l.estimated_offer_max || 0), 0);
+    const pendingEquity = queue.reduce((s, l) => s + (l.estimated_market_value && l.estimated_offer_max ? l.estimated_market_value - (l.approved_offer || l.estimated_offer_max) : 0), 0);
+    const answered = (rc.accepted?.count || 0) + (rc.declined?.count || 0) + (rc.countered?.count || 0);
+
+    res.json({
+      threshold: env.rules.viabilityThreshold,
+      totals: {
+        pendingCount: queue.length,
+        pendingValue,
+        pendingEquity,
+        approvedThisMonth: approvedMonth[0]?.count || 0,
+        approvedValueThisMonth: approvedMonth[0]?.value || 0,
+        offersSent,
+        awaitingSeller: rc.pending?.count || 0,
+        accepted: rc.accepted?.count || 0,
+        acceptedValue: rc.accepted?.value || 0,
+        countered: rc.countered?.count || 0,
+        declined: rc.declined?.count || 0,
+        acceptanceRate: answered ? Math.round(((rc.accepted?.count || 0) / answered) * 100) : null,
+      },
+      queue,
+      responses,
+    });
+  })
+);
+
 export default router;

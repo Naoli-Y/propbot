@@ -14,6 +14,9 @@ export const env = {
   isProd: process.env.NODE_ENV === 'production',
   port: int(process.env.PORT, 5000),
   corsOrigins: list(process.env.CORS_ORIGINS),
+  // Public URL of the app, used in seller emails (e.g. https://propbot-xyz.a.run.app). Falls back to the request origin.
+  publicAppUrl: (process.env.PUBLIC_APP_URL || '').replace(/\/$/, ''),
+  companyName: process.env.COMPANY_NAME || 'PropBot Home Buyers',
 
   mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/propbot',
 

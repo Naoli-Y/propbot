@@ -41,8 +41,11 @@ export const requireRole = (...roles) => (req, res, next) => {
   next();
 };
 
-/** Blocks viewers from mutating data. */
+/** Blocks viewers and investors from editing lead data. */
 export const requireWriter = requireRole('admin', 'manager');
+
+/** Who may approve, reject or send back offers. */
+export const requireApprover = requireRole('admin', 'manager', 'investor');
 
 /** Dashboard JWT OR webhook API key (x-api-key). Used for lead ingestion. */
 export const requireUserOrApiKey = wrap(async (req, res, next) => {
@@ -55,7 +58,7 @@ export const requireUserOrApiKey = wrap(async (req, res, next) => {
   }
   const user = await userFromBearer(req);
   if (!user) return res.status(401).json({ error: 'Authentication required (Bearer token or x-api-key)' });
-  if (user.role === 'viewer') return res.status(403).json({ error: 'Viewers cannot create leads' });
+  if (['viewer', 'investor'].includes(user.role)) return res.status(403).json({ error: 'Your role cannot create leads' });
   req.user = user;
   req.actor = user.email;
   next();
@@ -71,7 +74,7 @@ export const requireCronOrUser = wrap(async (req, res, next) => {
     return next();
   }
   const user = await userFromBearer(req);
-  if (!user || user.role === 'viewer') return res.status(401).json({ error: 'Authentication required' });
+  if (!user || ['viewer', 'investor'].includes(user.role)) return res.status(401).json({ error: 'Authentication required' });
   req.user = user;
   req.actor = user.email;
   req.trigger = 'manual';

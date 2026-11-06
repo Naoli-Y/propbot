@@ -7,7 +7,7 @@ const TimelineEventSchema = new Schema(
   {
     type: {
       type: String,
-      enum: ['created', 'geocoded', 'underwritten', 'status_change', 'override', 'outreach', 'note', 'error', 'edit', 'stale_flag'],
+      enum: ['created', 'geocoded', 'underwritten', 'status_change', 'override', 'outreach', 'note', 'error', 'edit', 'stale_flag', 'seller_response', 'decision'],
       required: true,
     },
     actor: { type: String, default: 'system' },
@@ -43,6 +43,18 @@ const OutreachSchema = new Schema(
     sent_at: { type: Date, default: Date.now },
   },
   { _id: true }
+);
+
+// Seller's reply to an offer, submitted through the seller portal.
+const SellerResponseSchema = new Schema(
+  {
+    status: { type: String, enum: ['pending', 'accepted', 'declined', 'countered'], default: 'pending' },
+    offer_amount: Number,
+    counter_offer: Number,
+    message: String,
+    responded_at: Date,
+  },
+  { _id: false }
 );
 
 const LeadSchema = new Schema(
@@ -106,6 +118,13 @@ const LeadSchema = new Schema(
 
     outreach: [OutreachSchema],
     timeline: [TimelineEventSchema],
+
+    // ── Seller portal ─────────────────────────────
+    // Secret token for the seller's private offer page (/offer/:token). Never returned by default.
+    portal_token: { type: String, select: false },
+    contact_consent: Boolean,
+    seller_response: SellerResponseSchema,
+    seller_responses: [SellerResponseSchema],
   },
   {
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
@@ -113,7 +132,9 @@ const LeadSchema = new Schema(
       virtuals: true,
       transform: (_doc, ret) => {
         ret.id = ret._id.toString();
+        ret.reference = ret.id.slice(-8).toUpperCase();
         delete ret.__v;
+        delete ret.portal_token;
         return ret;
       },
     },
@@ -126,6 +147,9 @@ LeadSchema.virtual('spread').get(function spread() {
 });
 
 LeadSchema.index({ created_at: -1 });
+LeadSchema.index({ portal_token: 1 }, { unique: true, sparse: true });
+LeadSchema.index({ 'seller_response.status': 1 });
+LeadSchema.index({ seller_email: 1 });
 LeadSchema.index({ viability_score: -1 });
 LeadSchema.index({ status: 1, status_changed_at: 1 });
 LeadSchema.index({ external_id: 1, source: 1 }, { unique: true, partialFilterExpression: { external_id: { $type: 'string' } } });

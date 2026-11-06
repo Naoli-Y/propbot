@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   RefreshCw, Send, CheckCircle2, Pencil, Trash2, MapPin, Mail, Phone, User, Clock, Bot, Cpu, AlertTriangle,
   MessageSquarePlus, ArrowRightLeft, ShieldAlert, ExternalLink, X, Wrench, Home, CalendarClock, ClipboardCheck,
+  Link2, Handshake, Gavel,
 } from 'lucide-react';
 import { api, errorMessage } from '../lib/api.js';
 import { money, number, dateTime, timeAgo } from '../lib/format.js';
 import { TRANSITIONS, SEVERITY_STYLE, STAGE_HINT } from '../lib/constants.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { Modal, ConfirmModal, PageLoader, ScoreBadge, StatusPill, StaleTag, Spinner, Field, EmptyState } from './ui.jsx';
+import { Modal, ConfirmModal, PageLoader, ScoreBadge, StatusPill, StaleTag, Spinner, Field, EmptyState, ResponseTag } from './ui.jsx';
 import LeadForm, { leadToForm, formToPayload } from './LeadForm.jsx';
 
 function Metric({ label, value, strong, tone }) {
@@ -46,6 +47,7 @@ function MapPanel({ lead }) {
 const TIMELINE_ICON = {
   created: Home, geocoded: MapPin, underwritten: Bot, status_change: ArrowRightLeft, override: ShieldAlert,
   outreach: Mail, note: MessageSquarePlus, error: AlertTriangle, edit: Pencil, stale_flag: Clock,
+  seller_response: Handshake, decision: Gavel,
 };
 
 function ApproveModal({ lead, open, onClose, onDone }) {
@@ -213,7 +215,7 @@ function StatusModal({ lead, open, onClose, onDone }) {
 
 export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
   const toast = useToast();
-  const { canWrite } = useAuth();
+  const { canWrite, canApprove } = useAuth();
   const [lead, setLead] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
@@ -256,6 +258,18 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
       update(data);
       setModal(null);
       toast('Lead updated');
+    } catch (err) {
+      toast(errorMessage(err), 'error');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const copyPortalLink = async () => {
+    setBusy('link');
+    try {
+      const { data } = await api.get(`/leads/${id}/portal-link`);
+      try { await navigator.clipboard.writeText(data.url); toast('Seller portal link copied'); } catch { window.prompt('Seller portal link', data.url); }
     } catch (err) {
       toast(errorMessage(err), 'error');
     } finally {
@@ -311,6 +325,12 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
           {onClose && <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100" aria-label="Close"><X className="h-5 w-5" /></button>}
         </div>
 
+        {canApprove && !canWrite && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {lead.status === 'Awaiting Approval' && <button className="btn-accent" onClick={() => setModal('approve')}><CheckCircle2 className="h-4 w-4" />Approve & send offer</button>}
+            <button className="btn-secondary" onClick={copyPortalLink} disabled={busy === 'link'}><Link2 className="h-4 w-4" />Copy seller link</button>
+          </div>
+        )}
         {canWrite && (
           <div className="mt-4 flex flex-wrap gap-2">
             {lead.status === 'Awaiting Approval' && <button className="btn-accent" onClick={() => setModal('approve')}><CheckCircle2 className="h-4 w-4" />Approve & send offer</button>}
@@ -326,6 +346,7 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
             )}
             <button className="btn-secondary" onClick={() => setModal('status')}><ArrowRightLeft className="h-4 w-4" />Move stage</button>
             <button className="btn-secondary" onClick={() => setModal('email')}><Mail className="h-4 w-4" />Email seller</button>
+            <button className="btn-ghost" onClick={copyPortalLink} disabled={busy === 'link'}><Link2 className="h-4 w-4" />Seller link</button>
             <button className="btn-ghost" onClick={() => setModal('edit')}><Pencil className="h-4 w-4" />Edit</button>
             <button className="btn-ghost text-red-600 hover:bg-red-50" onClick={() => setModal('delete')}><Trash2 className="h-4 w-4" />Delete</button>
           </div>
@@ -419,6 +440,27 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
               <Metric label="Built" value={lead.year_built ?? '—'} />
             </div>
           </section>
+
+          {lead.seller_response?.status && (
+            <section className={`card p-5 ${lead.seller_response.status === 'countered' ? 'ring-2 ring-ember-400' : lead.seller_response.status === 'accepted' ? 'ring-2 ring-emerald-400' : ''}`}>
+              <div className="mb-3 flex items-center justify-between gap-2"><p className="eyebrow">Seller response</p><ResponseTag response={lead.seller_response} /></div>
+              {lead.seller_response.status === 'pending' ? (
+                <p className="text-sm text-slate-500">Offer of <span className="num font-semibold text-slate-700">{money(lead.seller_response.offer_amount || lead.approved_offer)}</span> sent — waiting for the seller to answer on their offer page.</p>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Metric label="Our offer" value={money(lead.seller_response.offer_amount)} />
+                    {lead.seller_response.counter_offer ? <Metric label="Seller counter" value={money(lead.seller_response.counter_offer)} tone="text-ember-700" /> : <Metric label="Answered" value={timeAgo(lead.seller_response.responded_at)} />}
+                  </div>
+                  {lead.seller_response.counter_offer && lead.seller_response.offer_amount && (
+                    <p className="mt-2 text-xs text-slate-500">Gap <span className="num font-semibold">{money(lead.seller_response.counter_offer - lead.seller_response.offer_amount)}</span>{lead.estimated_offer_max ? <> · AI max <span className="num">{money(lead.estimated_offer_max)}</span></> : null}</p>
+                  )}
+                  {lead.seller_response.message && <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm italic text-slate-600">“{lead.seller_response.message}”</p>}
+                  {lead.seller_response.status === 'countered' && canWrite && <p className="mt-3 text-xs text-slate-500">To answer, move the lead back to <strong>Awaiting Approval</strong> and approve a new amount. The seller receives a fresh offer.</p>}
+                </>
+              )}
+            </section>
+          )}
 
           <section className="card p-5">
             <p className="eyebrow mb-3">Location</p>

@@ -69,7 +69,8 @@ export default function Login() {
               {busy ? <Spinner className="h-4 w-4 text-white" /> : <>Sign in <ArrowRight className="h-4 w-4" /></>}
             </button>
           </div>
-          <p className="mt-6 text-xs text-slate-400">First run? The admin account comes from <code className="font-mono">ADMIN_EMAIL</code> / <code className="font-mono">ADMIN_PASSWORD</code> in the server&apos;s .env.</p>
+          <p className="mt-6 text-sm"><a href="/sell" className="font-semibold text-ink-600 hover:underline">Selling a house? Get a cash offer →</a></p>
+          <p className="mt-3 text-xs text-slate-400">First run? The admin account comes from <code className="font-mono">ADMIN_EMAIL</code> / <code className="font-mono">ADMIN_PASSWORD</code> in the server&apos;s .env.</p>
         </form>
       </div>
     </div>

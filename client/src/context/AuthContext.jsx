@@ -34,7 +34,9 @@ export function AuthProvider({ children }) {
     login,
     logout,
     setUser,
-    canWrite: user && user.role !== 'viewer',
+    canWrite: Boolean(user && ['admin', 'manager'].includes(user.role)),
+    canApprove: Boolean(user && ['admin', 'manager', 'investor'].includes(user.role)),
+    isInvestor: user?.role === 'investor',
     isAdmin: user?.role === 'admin',
   }), [user, loading, login, logout]);
 

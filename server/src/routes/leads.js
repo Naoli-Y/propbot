@@ -3,13 +3,14 @@ import multer from 'multer';
 import { Lead } from '../models/Lead.js';
 import { env } from '../config/env.js';
 import { asyncHandler, validateObjectId } from '../middleware/errors.js';
-import { requireUser, requireUserOrApiKey, requireWriter } from '../middleware/auth.js';
+import { requireUser, requireUserOrApiKey, requireWriter, requireApprover } from '../middleware/auth.js';
 import { normalizeLead, cleanString, parseMoney } from '../utils/normalize.js';
 import { parseCsv, toCsv } from '../utils/csv.js';
 import { processLead, sendOutreach } from '../services/pipeline.js';
 import { transition, STATUSES, TRANSITIONS } from '../services/stateMachine.js';
 import { buildSellerEmail } from '../services/email.js';
 import { enqueueLeads, queueStatus } from '../services/queue.js';
+import { baseUrl, ensurePortalToken, portalUrl } from '../services/portal.js';
 
 const router = Router();
 const upload = multer({
@@ -167,6 +168,7 @@ function buildFilter(q) {
   if (q.stale === 'true') filter.is_stale = true;
   if (q.source) filter.source = String(q.source);
   if (q.engine) filter.underwriting_engine = String(q.engine);
+  if (q.response) filter['seller_response.status'] = { $in: String(q.response).split(',') };
   const minScore = parseInt(q.minScore, 10);
   const maxScore = parseInt(q.maxScore, 10);
   if (Number.isFinite(minScore) || Number.isFinite(maxScore)) {
@@ -397,7 +399,7 @@ router.post(
 router.post(
   '/:id/approve',
   validateObjectId(),
-  requireWriter,
+  requireApprover,
   loadLead,
   asyncHandler(async (req, res) => {
     const lead = req.lead;
@@ -413,10 +415,47 @@ router.post(
       subject: cleanString(req.body?.subject, 200),
       body: cleanString(req.body?.body, 8000),
       actor: req.actor,
+      base: baseUrl(req),
     });
+    // A new offer opens a new round of seller responses.
+    lead.seller_response = { status: 'pending', offer_amount: offer };
     transition(lead, 'Outreach Sent', { actor: req.actor, reason: `Offer of $${offer.toLocaleString('en-US')} approved and sent` });
     await lead.save();
     res.json({ lead, delivery: result });
+  })
+);
+
+// Investor decision on a pending offer: send back for rework, or reject the deal.
+router.post(
+  '/:id/decision',
+  validateObjectId(),
+  requireApprover,
+  loadLead,
+  asyncHandler(async (req, res) => {
+    const lead = req.lead;
+    const { decision } = req.body || {};
+    const reason = cleanString(req.body?.reason, 500);
+    if (lead.status !== 'Awaiting Approval') return res.status(409).json({ error: `Lead must be in "Awaiting Approval" (currently "${lead.status}")` });
+    if (!['send_back', 'reject'].includes(decision)) return res.status(400).json({ error: 'decision must be "send_back" or "reject"' });
+    if (!reason) return res.status(400).json({ error: 'Please give a reason so the team knows what to change' });
+    const to = decision === 'send_back' ? 'Offer Drafted' : 'Dead';
+    lead.timeline.push({ type: 'decision', actor: req.actor, message: `${decision === 'send_back' ? 'Sent back for rework' : 'Rejected'}: ${reason}` });
+    transition(lead, to, { actor: req.actor, reason: `${decision === 'send_back' ? 'Investor sent back' : 'Investor rejected'}: ${reason}` });
+    await lead.save();
+    res.json(lead);
+  })
+);
+
+// Private seller portal link for this lead (created on first request).
+router.get(
+  '/:id/portal-link',
+  validateObjectId(),
+  requireApprover,
+  loadLead,
+  asyncHandler(async (req, res) => {
+    const token = await ensurePortalToken(req.lead);
+    if (req.lead.isModified()) await req.lead.save();
+    res.json({ url: portalUrl(baseUrl(req), token), path: `/offer/${token}` });
   })
 );
 
@@ -434,6 +473,7 @@ router.post(
       subject: cleanString(req.body?.subject, 200),
       body: cleanString(req.body?.body, 8000),
       actor: req.actor,
+      base: baseUrl(req),
     });
     await req.lead.save();
     res.json({ lead: req.lead, delivery: result });
@@ -443,7 +483,7 @@ router.post(
 router.get('/:id/email-preview', validateObjectId(), loadLead, (req, res) => {
   const kind = ['cash_offer', 'clarification', 'follow_up'].includes(req.query.kind) ? req.query.kind : 'cash_offer';
   const offer = parseMoney(req.query.offer);
-  res.json({ kind, to: req.lead.seller_email || null, ...buildSellerEmail(req.lead, kind, { offer, note: cleanString(req.query.note, 1000) }) });
+  res.json({ kind, to: req.lead.seller_email || null, ...buildSellerEmail(req.lead, kind, { offer, note: cleanString(req.query.note, 1000), portalUrl: `${baseUrl(req)}/offer/…` }) });
 });
 
 // ─── Notes ───────────────────────────────────────────────────

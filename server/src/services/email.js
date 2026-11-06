@@ -18,8 +18,39 @@ function wrapHtml(inner) {
 </table></td></tr></table></body></html>`;
 }
 
-/** Builds the seller-facing email. kind: cash_offer | clarification | follow_up */
-export function buildSellerEmail(lead, kind = 'cash_offer', { offer, note } = {}) {
+/** Builds the seller-facing email (with a link to the seller portal when portalUrl is given). */
+export function buildSellerEmail(lead, kind = 'cash_offer', { offer, note, portalUrl } = {}) {
+  const mail = buildSellerEmailBody(lead, kind, { offer, note });
+  if (!portalUrl) return mail;
+  const label = kind === 'clarification' ? 'Track your request online' : 'View and respond to your offer online';
+  return {
+    subject: mail.subject,
+    text: mail.text.replace('\n\nBest regards,', `\n\n${label}: ${portalUrl}\n\nBest regards,`),
+    html: mail.html.replace('<p>Best regards,', `${buttonHtml(label, portalUrl)}<p>Best regards,`),
+  };
+}
+
+const buttonHtml = (label, url) => `<p style="margin:24px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:#e98a15;color:#ffffff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:8px">${escapeHtml(label)}</a></p>`;
+
+/** Confirmation sent to a seller right after they submit the public form. */
+export function buildSubmissionConfirmation(lead, { reference, portalUrl }) {
+  const name = firstName(lead.seller_name);
+  const subject = `We received your property — ref ${reference}`;
+  const text = `Hi ${name},\n\nThanks for telling us about ${lead.property_address}. Our team is reviewing it now and you'll usually hear back within one business day with a no-obligation cash offer.\n\nYour reference number: ${reference}\nTrack your request: ${portalUrl}\n\nBest regards,\n${env.sendgrid.fromName}`;
+  const html = wrapHtml(`<p>Hi ${escapeHtml(name)},</p><p>Thanks for telling us about <strong>${escapeHtml(lead.property_address)}</strong>. Our team is reviewing it now and you'll usually hear back within one business day with a no-obligation cash offer.</p><p>Your reference number: <strong style="font-family:monospace">${escapeHtml(reference)}</strong></p>${buttonHtml('Track your request', portalUrl)}<p>Best regards,<br>${escapeHtml(env.sendgrid.fromName)}</p>`);
+  return { subject, text, html };
+}
+
+/** "Here is your link" email for sellers who look up their offer by reference. */
+export function buildPortalLinkEmail(lead, { portalUrl }) {
+  const name = firstName(lead.seller_name);
+  const subject = `Your link for ${lead.property_address}`;
+  const text = `Hi ${name},\n\nHere is the private link to your request for ${lead.property_address}:\n${portalUrl}\n\nIf you didn't ask for this, you can ignore this email.\n\nBest regards,\n${env.sendgrid.fromName}`;
+  const html = wrapHtml(`<p>Hi ${escapeHtml(name)},</p><p>Here is the private link to your request for <strong>${escapeHtml(lead.property_address)}</strong>.</p>${buttonHtml('Open my offer page', portalUrl)}<p style="color:#6b7680;font-size:13px">If you didn't ask for this, you can ignore this email.</p><p>Best regards,<br>${escapeHtml(env.sendgrid.fromName)}</p>`);
+  return { subject, text, html };
+}
+
+function buildSellerEmailBody(lead, kind = 'cash_offer', { offer, note } = {}) {
   const name = firstName(lead.seller_name);
   const addr = lead.property_address;
   const offerAmount = offer ?? lead.approved_offer ?? lead.estimated_offer_max;
@@ -100,4 +131,16 @@ export async function sendEmail({ to, subject, text, html, categories = [] }) {
     },
     { retries: 3, baseMs: 500, label: 'SendGrid send' }
   );
+}
+
+/** Internal alert to the team (DIGEST_RECIPIENTS). Never throws. */
+export async function notifyTeam(subject, lines) {
+  if (!env.sendgrid.digestRecipients.length) return { status: 'skipped' };
+  const text = Array.isArray(lines) ? lines.join('\n') : String(lines);
+  try {
+    return await sendEmail({ to: env.sendgrid.digestRecipients, subject: `[PropBot] ${subject}`, text, html: `<pre style="font-family:Segoe UI,Arial,sans-serif;white-space:pre-wrap">${escapeHtml(text)}</pre>`, categories: ['alert'] });
+  } catch (err) {
+    logger.warn('Team notification failed', { error: err.message });
+    return { status: 'failed' };
+  }
 }

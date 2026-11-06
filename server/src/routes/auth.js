@@ -56,7 +56,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const email = normalizeEmail(req.body?.email);
     const name = cleanString(req.body?.name, 120);
-    const role = ['admin', 'manager', 'viewer'].includes(req.body?.role) ? req.body.role : 'manager';
+    const role = ['admin', 'manager', 'investor', 'viewer'].includes(req.body?.role) ? req.body.role : 'manager';
     if (!email || !name) return res.status(400).json({ error: 'Name and a valid email are required' });
     if (!validPassword(req.body?.password)) return res.status(400).json({ error: 'Password must be at least 8 characters' });
     if (await User.exists({ email })) return res.status(409).json({ error: 'A user with this email already exists' });
@@ -76,7 +76,7 @@ router.patch(
     const user = await User.findById(req.params.id).select('+password_hash');
     if (!user) return res.status(404).json({ error: 'User not found' });
     const isSelf = user._id.equals(req.user._id);
-    if (req.body?.role && ['admin', 'manager', 'viewer'].includes(req.body.role)) {
+    if (req.body?.role && ['admin', 'manager', 'investor', 'viewer'].includes(req.body.role)) {
       if (isSelf && req.body.role !== 'admin') return res.status(400).json({ error: 'You cannot demote yourself' });
       user.role = req.body.role;
     }

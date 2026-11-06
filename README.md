@@ -40,6 +40,32 @@ Extras: JWT auth with admin / manager / viewer roles, team management, CSV expor
 
 ---
 
+## The three front ends
+
+| App | URL | Who uses it |
+|---|---|---|
+| **Acquisition dashboard** | `/` (login) | Admins & managers: overview, pipeline board, leads, import, settings |
+| **Investor desk** | `/investor` (login, role `investor`, also visible to admins/managers) | Approve & send, adjust, send back or reject offers; equity in queue; seller acceptance rate; live seller responses |
+| **“Sell your house” website** | `/sell` (public) | Sellers submit their property → normalized, geocoded and AI-underwritten instantly (source `website`) |
+| **Seller portal** | `/offer/<private-token>` (public) and `/offer` (lookup) | Sellers track their request, see the approved cash offer and **accept, decline or counter** |
+
+**Roles:** `admin` (everything + team), `manager` (work leads, send offers), `investor` (approve/reject offers, read-only otherwise), `viewer` (read-only).
+The seed script creates a demo investor: `investor@propbot.local` with the same password as `ADMIN_PASSWORD`.
+
+**Seller portal flow**
+1. Seller submits at `/sell` (or arrives via webhook/CSV) → a private token is created and the seller gets a confirmation email with the link.
+2. The portal shows “Under review” — no scores, margins or AI notes are ever exposed to sellers.
+3. When an offer is approved, the offer email contains the portal link. The seller accepts, declines or counters (with an optional message).
+4. The response appears on the Investor desk, the lead drawer, the pipeline card and the daily digest; the team gets an email alert (`DIGEST_RECIPIENTS`).
+5. To answer a counter, move the lead back to *Awaiting Approval* and approve a new amount — the seller gets a fresh offer.
+
+Public endpoints: `POST /api/public/leads` (honeypot + consent + rate limit, 8 per 15 min per IP), `GET /api/portal/:token`, `POST /api/portal/:token/respond`, `POST /api/portal/lookup` (emails the link; never reveals whether a match exists).
+Team endpoints added: `POST /api/leads/:id/decision` (`send_back` | `reject`, reason required), `GET /api/leads/:id/portal-link`, `GET /api/stats/investor`, list filter `?response=accepted,countered`.
+
+Set `PUBLIC_APP_URL` (your public address) so links in emails are correct, and `COMPANY_NAME` for the brand shown on the public site.
+
+---
+
 ## Quick start (local)
 
 **Requirements:** Node.js 20+, MongoDB 6+ (local, Docker, or a free MongoDB Atlas M0 cluster).
