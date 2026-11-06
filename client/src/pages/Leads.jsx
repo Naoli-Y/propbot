@@ -14,7 +14,8 @@ const FILTER_KEYS = ['q', 'status', 'priority', 'minScore', 'stale', 'response',
 
 export default function Leads() {
   const toast = useToast();
-  const { canWrite } = useAuth();
+  const { can } = useAuth();
+  const canSelect = can('leads.move', 'leads.delete');
   const [params, setParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -55,7 +56,6 @@ export default function Leads() {
   useEffect(() => {
     const t = setTimeout(() => { if (search !== (params.get('q') || '')) setFilter('q', search); }, 350);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const toggle = (id) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -100,8 +100,8 @@ export default function Leads() {
         title="All leads"
         subtitle={data ? `${data.total} lead${data.total === 1 ? '' : 's'}${hasFilters ? ' matching filters' : ''}` : ' '}
         actions={<>
-          <button className="btn-secondary" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</button>
-          {canWrite && <Link to="/leads/new" className="btn-primary"><Plus className="h-4 w-4" />New lead</Link>}
+          {can('leads.export') && <button className="btn-secondary" onClick={exportCsv}><Download className="h-4 w-4" />Export CSV</button>}
+          {can('leads.create') && <Link to="/leads/new" className="btn-primary"><Plus className="h-4 w-4" />New lead</Link>}
         </>}
       />
 
@@ -133,12 +133,12 @@ export default function Leads() {
         {hasFilters && <button className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800" onClick={() => { setSearch(''); setParams({}, { replace: true }); }}><X className="h-3 w-3" />Clear filters</button>}
       </div>
 
-      {canWrite && selected.size > 0 && (
+      {canSelect && selected.size > 0 && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-ink-900 px-4 py-2.5 text-sm text-white animate-rise">
           <span className="font-semibold">{selected.size} selected</span>
           <span className="flex-1" />
-          <button className="btn-sm btn bg-white/10 hover:bg-white/20" onClick={() => setBulk('status')}><ArrowRightLeft className="h-3.5 w-3.5" />Move stage</button>
-          <button className="btn-sm btn bg-white/10 hover:bg-red-500" onClick={() => setBulk('delete')}><Trash2 className="h-3.5 w-3.5" />Delete</button>
+          {can('leads.move') && <button className="btn-sm btn bg-white/10 hover:bg-white/20" onClick={() => setBulk('status')}><ArrowRightLeft className="h-3.5 w-3.5" />Move stage</button>}
+          {can('leads.delete') && <button className="btn-sm btn bg-white/10 hover:bg-red-500" onClick={() => setBulk('delete')}><Trash2 className="h-3.5 w-3.5" />Delete</button>}
         </div>
       )}
 
@@ -151,7 +151,7 @@ export default function Leads() {
             <table className="w-full text-sm">
               <thead className="border-b border-line bg-slate-50/70 text-left">
                 <tr className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                  {canWrite && <th className="w-10 px-4 py-3"><input type="checkbox" className="accent-ink-900" checked={allSelected} onChange={toggleAll} aria-label="Select all" /></th>}
+                  {canSelect && <th className="w-10 px-4 py-3"><input type="checkbox" className="accent-ink-900" checked={allSelected} onChange={toggleAll} aria-label="Select all" /></th>}
                   <th className="px-3 py-3">Score</th>
                   <th className="px-3 py-3">Property</th>
                   <th className="px-3 py-3">Stage</th>
@@ -164,7 +164,7 @@ export default function Leads() {
               <tbody className="divide-y divide-line">
                 {data.items.map((l) => (
                   <tr key={l.id} className="cursor-pointer hover:bg-slate-50" onClick={() => setOpenId(l.id)}>
-                    {canWrite && <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="accent-ink-900" checked={selected.has(l.id)} onChange={() => toggle(l.id)} aria-label="Select lead" /></td>}
+                    {canSelect && <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}><input type="checkbox" className="accent-ink-900" checked={selected.has(l.id)} onChange={() => toggle(l.id)} aria-label="Select lead" /></td>}
                     <td className="px-3 py-3"><ScoreBadge score={l.viability_score} size="sm" threshold={threshold} /></td>
                     <td className="max-w-xs px-3 py-3">
                       <p className="truncate font-semibold text-slate-800">{l.property_address}</p>
@@ -184,7 +184,7 @@ export default function Leads() {
           <ul className="divide-y divide-line md:hidden">
             {data.items.map((l) => (
               <li key={l.id} className="flex items-center gap-3 px-4 py-3" onClick={() => setOpenId(l.id)}>
-                {canWrite && <input type="checkbox" className="accent-ink-900" checked={selected.has(l.id)} onClick={(e) => e.stopPropagation()} onChange={() => toggle(l.id)} aria-label="Select lead" />}
+                {canSelect && <input type="checkbox" className="accent-ink-900" checked={selected.has(l.id)} onClick={(e) => e.stopPropagation()} onChange={() => toggle(l.id)} aria-label="Select lead" />}
                 <ScoreBadge score={l.viability_score} size="sm" threshold={threshold} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-800">{l.property_address}</p>

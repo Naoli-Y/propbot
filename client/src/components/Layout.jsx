@@ -4,12 +4,12 @@ import { LayoutDashboard, KanbanSquare, Table2, PlusCircle, Upload, Settings, Lo
 import { useAuth } from '../context/AuthContext.jsx';
 
 const NAV = [
-  { to: '/', label: 'Overview', icon: LayoutDashboard, end: true, hideFor: ['investor'] },
-  { to: '/investor', label: 'Investor desk', icon: Landmark, approve: true },
-  { to: '/pipeline', label: 'Pipeline', icon: KanbanSquare },
-  { to: '/leads', label: 'All leads', icon: Table2 },
-  { to: '/leads/new', label: 'New lead', icon: PlusCircle, write: true },
-  { to: '/import', label: 'CSV import', icon: Upload, write: true },
+  { to: '/', label: 'Overview', icon: LayoutDashboard, end: true, perm: 'dashboard.view' },
+  { to: '/investor', label: 'Investor desk', icon: Landmark, perm: 'investor.view' },
+  { to: '/pipeline', label: 'Pipeline', icon: KanbanSquare, perm: 'pipeline.view' },
+  { to: '/leads', label: 'All leads', icon: Table2, perm: 'leads.view' },
+  { to: '/leads/new', label: 'New lead', icon: PlusCircle, perm: 'leads.create' },
+  { to: '/import', label: 'CSV import', icon: Upload, perm: 'leads.import' },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -28,10 +28,10 @@ function Brand() {
 }
 
 function NavItems({ onNavigate }) {
-  const { user, canWrite, canApprove } = useAuth();
+  const { can } = useAuth();
   return (
     <nav className="flex flex-col gap-0.5">
-      {NAV.filter((n) => (!n.write || canWrite) && (!n.approve || canApprove) && !n.hideFor?.includes(user?.role)).map(({ to, label, icon: Icon, end }) => (
+      {NAV.filter((n) => !n.perm || can(n.perm)).map(({ to, label, icon: Icon, end }) => (
         <NavLink key={to} to={to} end={end ?? to === '/leads'} onClick={onNavigate}
           className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${isActive ? 'bg-white/10 text-white' : 'text-ink-200 hover:bg-white/5 hover:text-white'}`}>
           <Icon className="h-[18px] w-[18px]" />{label}
@@ -52,7 +52,7 @@ function UserBox() {
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-700 text-sm font-bold text-white">{user?.name?.[0]?.toUpperCase() || '?'}</div>
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-semibold text-white">{user?.name}</div>
-        <div className="truncate text-xs capitalize text-ink-300">{user?.role}</div>
+        <div className="truncate text-xs text-ink-300">{user?.role_name || user?.role}</div>
       </div>
       <button onClick={() => { logout(); navigate('/login'); }} className="rounded-md p-1.5 text-ink-300 hover:bg-white/10 hover:text-white" title="Sign out" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
     </div>

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bot, MapPin, Mail, Database, Play, Copy, CheckCircle2, XCircle, UserPlus, Trash2, Webhook, CalendarClock, Users, KeyRound, Plug, Globe } from 'lucide-react';
+import { Bot, MapPin, Mail, Database, Play, Copy, CheckCircle2, XCircle, Webhook, CalendarClock, Users, KeyRound, Plug, Globe, ShieldCheck } from 'lucide-react';
 import { api, errorMessage } from '../lib/api.js';
 import { dateTime } from '../lib/format.js';
 import { PageHeader } from '../components/Layout.jsx';
-import { ConfirmModal, Field, Modal, PageLoader, Spinner } from '../components/ui.jsx';
+import { Field, Modal, PageLoader, Spinner } from '../components/ui.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { Team, RolesEditor } from '../components/AccessControl.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
 function Status({ ok, okLabel = 'Connected', offLabel = 'Not configured' }) {
@@ -189,82 +190,6 @@ gcloud scheduler jobs create http propbot-sweep \\
   );
 }
 
-function Team() {
-  const toast = useToast();
-  const { user: me } = useAuth();
-  const [users, setUsers] = useState(null);
-  const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'manager' });
-  const [busy, setBusy] = useState(false);
-  const [del, setDel] = useState(null);
-
-  const load = useCallback(() => api.get('/auth/users').then((r) => setUsers(r.data.users)).catch((e) => toast(errorMessage(e), 'error')), [toast]);
-  useEffect(() => { load(); }, [load]);
-
-  const create = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    try {
-      await api.post('/auth/users', form);
-      toast('User created');
-      setAdding(false);
-      setForm({ name: '', email: '', password: '', role: 'manager' });
-      load();
-    } catch (err) { toast(errorMessage(err), 'error'); } finally { setBusy(false); }
-  };
-
-  const patch = async (u, body) => {
-    try { await api.patch(`/auth/users/${u.id}`, body); load(); } catch (err) { toast(errorMessage(err), 'error'); }
-  };
-
-  const remove = async () => {
-    setBusy(true);
-    try { await api.delete(`/auth/users/${del.id}`); toast('User removed'); setDel(null); load(); } catch (err) { toast(errorMessage(err), 'error'); } finally { setBusy(false); }
-  };
-
-  if (!users) return <PageLoader />;
-  return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center justify-between border-b border-line px-5 py-3">
-        <p className="eyebrow">Team members</p>
-        <button className="btn-primary btn-sm" onClick={() => setAdding(true)}><UserPlus className="h-3.5 w-3.5" />Add user</button>
-      </div>
-      <ul className="divide-y divide-line">
-        {users.map((u) => (
-          <li key={u.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-700">{u.name[0]?.toUpperCase()}</div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-800">{u.name} {u.id === me.id && <span className="text-xs font-normal text-slate-400">(you)</span>}</p>
-              <p className="truncate text-xs text-slate-500">{u.email} · last login {u.last_login_at ? dateTime(u.last_login_at) : 'never'}</p>
-            </div>
-            <select className="input w-auto py-1.5 text-xs" value={u.role} disabled={u.id === me.id} onChange={(e) => patch(u, { role: e.target.value })} aria-label="Role">
-              <option value="admin">Admin</option><option value="manager">Manager</option><option value="investor">Investor</option><option value="viewer">Viewer</option>
-            </select>
-            <label className="flex items-center gap-1.5 text-xs text-slate-500">
-              <input type="checkbox" className="accent-ink-900" checked={u.active} disabled={u.id === me.id} onChange={(e) => patch(u, { active: e.target.checked })} />Active
-            </label>
-            <button className="rounded-md p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30" disabled={u.id === me.id} onClick={() => setDel(u)} aria-label="Delete user"><Trash2 className="h-4 w-4" /></button>
-          </li>
-        ))}
-      </ul>
-      <Modal open={adding} onClose={() => setAdding(false)} title="Add team member">
-        <form onSubmit={create} className="space-y-4">
-          <Field label="Name"><input className="input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-          <Field label="Email"><input className="input" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>
-          <Field label="Temporary password" hint="At least 8 characters"><input className="input" type="password" minLength={8} required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></Field>
-          <Field label="Role">
-            <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
-              <option value="manager">Manager — work leads, send offers</option><option value="investor">Investor — approve or reject offers</option><option value="viewer">Viewer — read only</option><option value="admin">Admin — full access</option>
-            </select>
-          </Field>
-          <div className="flex justify-end gap-2"><button type="button" className="btn-secondary" onClick={() => setAdding(false)}>Cancel</button><button className="btn-primary" disabled={busy}>{busy && <Spinner className="h-4 w-4 text-white" />}Create</button></div>
-        </form>
-      </Modal>
-      <ConfirmModal open={Boolean(del)} onClose={() => setDel(null)} onConfirm={remove} busy={busy} danger confirmLabel="Remove" title="Remove user?" body={del ? `${del.name} (${del.email}) will lose access.` : ''} />
-    </div>
-  );
-}
-
 function Profile() {
   const toast = useToast();
   const { user, setUser } = useAuth();
@@ -299,39 +224,41 @@ function Profile() {
 }
 
 export default function Settings() {
-  const { isAdmin, canWrite } = useAuth();
-  const [tab, setTab] = useState('integrations');
-  const [sys, setSys] = useState(null);
-
-  useEffect(() => { api.get('/system/status').then((r) => setSys(r.data)).catch(() => {}); }, []);
-
+  const { can } = useAuth();
   const tabs = [
-    { key: 'integrations', label: 'Integrations', icon: Plug },
-    { key: 'jobs', label: 'Automation', icon: CalendarClock },
-    { key: 'site', label: 'Seller website', icon: Globe },
-    { key: 'api', label: 'Webhook & scheduler', icon: Webhook },
-    ...(isAdmin ? [{ key: 'team', label: 'Team', icon: Users }] : []),
+    { key: 'integrations', label: 'Integrations', icon: Plug, perm: 'settings.view' },
+    { key: 'jobs', label: 'Automation', icon: CalendarClock, perm: ['settings.view', 'jobs.run'] },
+    { key: 'site', label: 'Seller website', icon: Globe, perm: 'settings.view' },
+    { key: 'api', label: 'Webhook & scheduler', icon: Webhook, perm: 'settings.view' },
+    { key: 'team', label: 'Team', icon: Users, perm: 'users.manage' },
+    { key: 'roles', label: 'Roles & permissions', icon: ShieldCheck, perm: 'roles.manage' },
     { key: 'profile', label: 'Profile', icon: KeyRound },
-  ];
+  ].filter((t) => !t.perm || can(...[].concat(t.perm)));
+  const [tab, setTab] = useState(tabs[0].key);
+  const [sys, setSys] = useState(null);
+  const current = tabs.some((t) => t.key === tab) ? tab : 'profile';
+
+  useEffect(() => { if (can('settings.view')) api.get('/system/status').then((r) => setSys(r.data)).catch(() => {}); }, [can]);
 
   return (
     <div className="mx-auto max-w-5xl">
-      <PageHeader title="Settings" subtitle="Integrations, automation jobs, API access and team." />
+      <PageHeader title="Settings" subtitle="Integrations, automation, API access, team and permissions." />
       <div className="mb-5 flex gap-1 overflow-x-auto border-b border-line scrollbar-thin">
         {tabs.map(({ key, label, icon: Icon }) => (
-          <button key={key} onClick={() => setTab(key)} className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-semibold transition ${tab === key ? 'border-ink-900 text-ink-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
+          <button key={key} onClick={() => setTab(key)} className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-semibold transition ${current === key ? 'border-ink-900 text-ink-900' : 'border-transparent text-slate-500 hover:text-slate-800'}`}>
             <Icon className="h-4 w-4" />{label}
           </button>
         ))}
       </div>
-      {['integrations', 'api', 'site'].includes(tab) && !sys ? <PageLoader /> : (
+      {['integrations', 'api', 'site'].includes(current) && !sys ? <PageLoader /> : (
         <>
-          {tab === 'integrations' && <Integrations sys={sys} />}
-          {tab === 'jobs' && <Jobs canRun={canWrite} />}
-          {tab === 'api' && <Integration sys={sys} />}
-          {tab === 'site' && <PublicSite sys={sys} />}
-          {tab === 'team' && isAdmin && <Team />}
-          {tab === 'profile' && <Profile />}
+          {current === 'integrations' && <Integrations sys={sys} />}
+          {current === 'jobs' && <Jobs canRun={can('jobs.run')} />}
+          {current === 'api' && <Integration sys={sys} />}
+          {current === 'site' && <PublicSite sys={sys} />}
+          {current === 'team' && <Team />}
+          {current === 'roles' && <RolesEditor />}
+          {current === 'profile' && <Profile />}
         </>
       )}
     </div>

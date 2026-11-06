@@ -52,7 +52,7 @@ function LeadCard({ lead, threshold, onOpen, draggable, onDragStart }) {
 
 export default function Pipeline() {
   const toast = useToast();
-  const { canWrite } = useAuth();
+  const { can } = useAuth();
   const [leads, setLeads] = useState(null);
   const [threshold, setThreshold] = useState(70);
   const [q, setQ] = useState('');
@@ -138,7 +138,7 @@ export default function Pipeline() {
           <button className={`btn ${hotOnly ? 'bg-ember-100 text-ember-700 ring-1 ring-ember-400' : 'btn-secondary'}`} onClick={() => setHotOnly((v) => !v)}><Flame className="h-4 w-4" />Hot only</button>
           <button className="btn-secondary" onClick={() => setShowDead((v) => !v)}>{showDead ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}{showDead ? 'Hide' : 'Show'} dead</button>
           <button className="btn-secondary" onClick={() => load()} aria-label="Refresh"><RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} /></button>
-          {canWrite && <Link to="/leads/new" className="btn-primary"><Plus className="h-4 w-4" />New lead</Link>}
+          {can('leads.create') && <Link to="/leads/new" className="btn-primary"><Plus className="h-4 w-4" />New lead</Link>}
         </>}
       />
 
@@ -169,7 +169,7 @@ export default function Pipeline() {
                     <p className="mt-0.5 text-[11px] text-slate-500">{STAGE_HINT[col.status]}</p>
                   </header>
                   <div className="flex max-h-[calc(100vh-240px)] min-h-[120px] flex-col gap-2.5 overflow-y-auto px-2.5 pb-3 scrollbar-thin">
-                    {col.items.map((l) => <LeadCard key={l.id} lead={l} threshold={threshold} onOpen={setOpenId} draggable={canWrite} onDragStart={onDragStart} />)}
+                    {col.items.map((l) => <LeadCard key={l.id} lead={l} threshold={threshold} onOpen={setOpenId} draggable={can('leads.move', 'offers.submit')} onDragStart={onDragStart} />)}
                     {!col.items.length && <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-300 py-8 text-xs text-slate-400">No leads</div>}
                   </div>
                 </section>

@@ -163,7 +163,7 @@ function EmailModal({ lead, open, onClose, onDone }) {
 
 function StatusModal({ lead, open, onClose, onDone }) {
   const toast = useToast();
-  const { isAdmin } = useAuth();
+  const { can } = useAuth();
   const [status, setStatus] = useState('');
   const [reason, setReason] = useState('');
   const [override, setOverride] = useState(false);
@@ -203,10 +203,10 @@ function StatusModal({ lead, open, onClose, onDone }) {
       <Field label={override ? 'Reason (required)' : 'Reason (optional)'} className="mt-4">
         <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Seller asked for a higher price…" />
       </Field>
-      {isAdmin && (
+      {can('status.override') && (
         <label className="mt-4 flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" className="accent-ink-900" checked={override} onChange={(e) => { setOverride(e.target.checked); setStatus(''); }} />
-          <ShieldAlert className="h-4 w-4 text-ember-600" /> Admin override (bypass state machine)
+          <ShieldAlert className="h-4 w-4 text-ember-600" /> Force override (bypass state machine)
         </label>
       )}
     </Modal>
@@ -215,7 +215,7 @@ function StatusModal({ lead, open, onClose, onDone }) {
 
 export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
   const toast = useToast();
-  const { canWrite, canApprove } = useAuth();
+  const { can } = useAuth();
   const [lead, setLead] = useState(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
@@ -325,32 +325,24 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
           {onClose && <button onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100" aria-label="Close"><X className="h-5 w-5" /></button>}
         </div>
 
-        {canApprove && !canWrite && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {lead.status === 'Awaiting Approval' && <button className="btn-accent" onClick={() => setModal('approve')}><CheckCircle2 className="h-4 w-4" />Approve & send offer</button>}
-            <button className="btn-secondary" onClick={copyPortalLink} disabled={busy === 'link'}><Link2 className="h-4 w-4" />Copy seller link</button>
-          </div>
-        )}
-        {canWrite && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {lead.status === 'Awaiting Approval' && <button className="btn-accent" onClick={() => setModal('approve')}><CheckCircle2 className="h-4 w-4" />Approve & send offer</button>}
-            {lead.status === 'Offer Drafted' && (
-              <button className="btn-primary" disabled={busy === 'submit'} onClick={() => act('submit', () => api.post(`/leads/${id}/submit-for-approval`), 'Submitted for approval')}>
-                {busy === 'submit' ? <Spinner className="h-4 w-4 text-white" /> : <ClipboardCheck className="h-4 w-4" />}Submit for approval
-              </button>
-            )}
-            {canReunderwrite && (
-              <button className="btn-secondary" disabled={busy === 'uw'} onClick={() => act('uw', () => api.post(`/leads/${id}/underwrite`), 'Underwriting refreshed')}>
-                <RefreshCw className={`h-4 w-4 ${busy === 'uw' ? 'animate-spin' : ''}`} />Re-run underwriting
-              </button>
-            )}
-            <button className="btn-secondary" onClick={() => setModal('status')}><ArrowRightLeft className="h-4 w-4" />Move stage</button>
-            <button className="btn-secondary" onClick={() => setModal('email')}><Mail className="h-4 w-4" />Email seller</button>
-            <button className="btn-ghost" onClick={copyPortalLink} disabled={busy === 'link'}><Link2 className="h-4 w-4" />Seller link</button>
-            <button className="btn-ghost" onClick={() => setModal('edit')}><Pencil className="h-4 w-4" />Edit</button>
-            <button className="btn-ghost text-red-600 hover:bg-red-50" onClick={() => setModal('delete')}><Trash2 className="h-4 w-4" />Delete</button>
-          </div>
-        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {lead.status === 'Awaiting Approval' && can('offers.approve') && <button className="btn-accent" onClick={() => setModal('approve')}><CheckCircle2 className="h-4 w-4" />Approve & send offer</button>}
+          {lead.status === 'Offer Drafted' && can('offers.submit') && (
+            <button className="btn-primary" disabled={busy === 'submit'} onClick={() => act('submit', () => api.post(`/leads/${id}/submit-for-approval`), 'Submitted for approval')}>
+              {busy === 'submit' ? <Spinner className="h-4 w-4 text-white" /> : <ClipboardCheck className="h-4 w-4" />}Submit for approval
+            </button>
+          )}
+          {canReunderwrite && can('leads.underwrite') && (
+            <button className="btn-secondary" disabled={busy === 'uw'} onClick={() => act('uw', () => api.post(`/leads/${id}/underwrite`), 'Underwriting refreshed')}>
+              <RefreshCw className={`h-4 w-4 ${busy === 'uw' ? 'animate-spin' : ''}`} />Re-run underwriting
+            </button>
+          )}
+          {can('leads.move', 'status.override') && <button className="btn-secondary" onClick={() => setModal('status')}><ArrowRightLeft className="h-4 w-4" />Move stage</button>}
+          {can('outreach.send') && <button className="btn-secondary" onClick={() => setModal('email')}><Mail className="h-4 w-4" />Email seller</button>}
+          {can('portal.link') && <button className="btn-ghost" onClick={copyPortalLink} disabled={busy === 'link'}><Link2 className="h-4 w-4" />Seller link</button>}
+          {can('leads.edit') && <button className="btn-ghost" onClick={() => setModal('edit')}><Pencil className="h-4 w-4" />Edit</button>}
+          {can('leads.delete') && <button className="btn-ghost text-red-600 hover:bg-red-50" onClick={() => setModal('delete')}><Trash2 className="h-4 w-4" />Delete</button>}
+        </div>
       </div>
 
       <div className="grid gap-4 px-4 pt-4 sm:px-6 xl:grid-cols-5">
@@ -456,7 +448,7 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
                     <p className="mt-2 text-xs text-slate-500">Gap <span className="num font-semibold">{money(lead.seller_response.counter_offer - lead.seller_response.offer_amount)}</span>{lead.estimated_offer_max ? <> · AI max <span className="num">{money(lead.estimated_offer_max)}</span></> : null}</p>
                   )}
                   {lead.seller_response.message && <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm italic text-slate-600">“{lead.seller_response.message}”</p>}
-                  {lead.seller_response.status === 'countered' && canWrite && <p className="mt-3 text-xs text-slate-500">To answer, move the lead back to <strong>Awaiting Approval</strong> and approve a new amount. The seller receives a fresh offer.</p>}
+                  {lead.seller_response.status === 'countered' && can('leads.move') && <p className="mt-3 text-xs text-slate-500">To answer, move the lead back to <strong>Awaiting Approval</strong> and approve a new amount. The seller receives a fresh offer.</p>}
                 </>
               )}
             </section>
@@ -490,7 +482,7 @@ export default function LeadDetail({ id, onClose, onChanged, onDeleted }) {
 
           <section className="card p-5">
             <p className="eyebrow mb-3">Activity & audit trail</p>
-            {canWrite && (
+            {can('leads.notes') && (
               <form onSubmit={addNote} className="mb-4 flex gap-2">
                 <input className="input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note…" />
                 <button className="btn-secondary" disabled={!note.trim() || busy === 'note'}>Add</button>

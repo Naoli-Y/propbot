@@ -3,11 +3,14 @@ import { connectDB, disconnectDB } from './config/db.js';
 import { createApp } from './app.js';
 import { logger } from './utils/logger.js';
 import { ensureAdminUser } from './scripts/bootstrap.js';
+import { ensureRoles, ensureSuperAdmin } from './services/rbac.js';
 
 async function main() {
   assertProductionConfig(logger);
   await connectDB();
+  await ensureRoles();
   await ensureAdminUser();
+  await ensureSuperAdmin();
 
   const app = createApp();
   const server = app.listen(env.port, () => {

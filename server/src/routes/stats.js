@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Lead } from '../models/Lead.js';
 import { env } from '../config/env.js';
 import { asyncHandler } from '../middleware/errors.js';
-import { requireUser } from '../middleware/auth.js';
+import { requireUser, requirePermission } from '../middleware/auth.js';
 import { STATUSES } from '../services/stateMachine.js';
 
 const router = Router();
@@ -10,6 +10,7 @@ router.use(requireUser);
 
 router.get(
   '/summary',
+  requirePermission('dashboard.view'),
   asyncHandler(async (req, res) => {
     const days = Math.min(90, Math.max(7, parseInt(req.query.days, 10) || 30));
     const since = new Date(Date.now() - days * 24 * 3600 * 1000);
@@ -92,6 +93,7 @@ router.get(
 // ─── Investor desk ───────────────────────────────────────────
 router.get(
   '/investor',
+  requirePermission('investor.view'),
   asyncHandler(async (_req, res) => {
     const monthStart = new Date();
     monthStart.setDate(1);

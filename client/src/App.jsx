@@ -15,19 +15,28 @@ import SellLanding from './pages/public/SellLanding.jsx';
 import SellerPortal from './pages/public/SellerPortal.jsx';
 import OfferLookup from './pages/public/OfferLookup.jsx';
 
-function Protected({ children, write, approve }) {
-  const { user, loading, canWrite, canApprove } = useAuth();
+function Protected({ children, perm }) {
+  const { user, loading, can, homePath } = useAuth();
   const location = useLocation();
   if (loading) return <div className="flex min-h-screen items-center justify-center"><PageLoader /></div>;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  if (write && !canWrite) return <Navigate to="/" replace />;
-  if (approve && !canApprove) return <Navigate to="/" replace />;
+  if (perm && !can(...[].concat(perm))) return location.pathname === homePath ? <NoAccess /> : <Navigate to={homePath} replace />;
   return children;
 }
 
+function NoAccess() {
+  return (
+    <div className="card mx-auto mt-10 max-w-md p-8 text-center">
+      <h1 className="text-lg font-extrabold text-slate-900">You don’t have access to this page</h1>
+      <p className="mt-2 text-sm text-slate-500">Ask your super admin to give your role the permission you need.</p>
+    </div>
+  );
+}
+
 function Home() {
-  const { isInvestor } = useAuth();
-  return isInvestor ? <Navigate to="/investor" replace /> : <Dashboard />;
+  const { can, homePath } = useAuth();
+  if (can('dashboard.view')) return <Dashboard />;
+  return homePath === '/' ? <NoAccess /> : <Navigate to={homePath} replace />;
 }
 
 export default function App() {
@@ -40,12 +49,12 @@ export default function App() {
       <Route path="/offer/:token" element={<SellerPortal />} />
       <Route element={<Protected><Layout /></Protected>}>
         <Route index element={<Home />} />
-        <Route path="investor" element={<Protected approve><InvestorDesk /></Protected>} />
-        <Route path="pipeline" element={<Pipeline />} />
-        <Route path="leads" element={<Leads />} />
-        <Route path="leads/new" element={<Protected write><NewLead /></Protected>} />
-        <Route path="leads/:id" element={<LeadPage />} />
-        <Route path="import" element={<Protected write><ImportLeads /></Protected>} />
+        <Route path="investor" element={<Protected perm="investor.view"><InvestorDesk /></Protected>} />
+        <Route path="pipeline" element={<Protected perm="pipeline.view"><Pipeline /></Protected>} />
+        <Route path="leads" element={<Protected perm="leads.view"><Leads /></Protected>} />
+        <Route path="leads/new" element={<Protected perm="leads.create"><NewLead /></Protected>} />
+        <Route path="leads/:id" element={<Protected perm={['leads.view', 'pipeline.view', 'investor.view']}><LeadPage /></Protected>} />
+        <Route path="import" element={<Protected perm="leads.import"><ImportLeads /></Protected>} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

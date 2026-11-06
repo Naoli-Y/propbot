@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { env } from '../config/env.js';
 import { dbState } from '../config/db.js';
-import { requireUser } from '../middleware/auth.js';
+import { requireUser, requirePermission } from '../middleware/auth.js';
 import { geminiEnabled } from '../services/gemini.js';
 import { sendgridEnabled } from '../services/email.js';
 import { geocoderInfo } from '../services/geocoder.js';
@@ -17,8 +17,8 @@ router.get('/health', (_req, res) => {
 
 const mask = (s) => (s ? `${s.slice(0, 3)}…${s.slice(-2)}` : null);
 
-router.get('/system/status', requireUser, (req, res) => {
-  const isAdmin = req.user.role === 'admin';
+router.get('/system/status', requireUser, requirePermission('settings.view'), (req, res) => {
+  const isAdmin = req.can('settings.secrets');
   res.json({
     environment: env.nodeEnv,
     database: { state: dbState() },

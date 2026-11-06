@@ -11,7 +11,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 
 function DealCard({ lead, threshold, onApproved, onDecided, onOpen }) {
   const toast = useToast();
-  const { canApprove } = useAuth();
+  const { can } = useAuth();
+  const canApprove = can('offers.approve');
+  const canDecide = can('offers.decide');
   const [offer, setOffer] = useState(String(lead.approved_offer || lead.estimated_offer_max || ''));
   const [expanded, setExpanded] = useState(false);
   const [busy, setBusy] = useState('');
@@ -86,15 +88,15 @@ function DealCard({ lead, threshold, onApproved, onDecided, onOpen }) {
             <div><p className="text-slate-400">Instant equity</p><p className={`num font-semibold ${equity > 0 ? 'text-emerald-700' : 'text-red-600'}`}>{equity == null ? '—' : money(equity, { compact: true })}</p></div>
             <div><p className="text-slate-400">Est. flip profit</p><p className={`num font-semibold ${profit > 0 ? 'text-emerald-700' : 'text-red-600'}`}>{profit == null ? '—' : money(profit, { compact: true })}</p></div>
           </div>
-          {canApprove && (
+          {(canApprove || canDecide) && (
             <div className="mt-4 space-y-2">
-              <button className="btn-accent w-full" onClick={approve} disabled={busy === 'approve' || !amount || !lead.seller_email}>
+              {canApprove && <button className="btn-accent w-full" onClick={approve} disabled={busy === 'approve' || !amount || !lead.seller_email}>
                 {busy === 'approve' ? <Spinner className="h-4 w-4 text-white" /> : <Send className="h-4 w-4" />}Approve & send
-              </button>
-              <div className="grid grid-cols-2 gap-2">
+              </button>}
+              {canDecide && <div className="grid grid-cols-2 gap-2">
                 <button className="btn-secondary btn-sm" onClick={() => { setDecision('send_back'); setReason(''); }}><Undo2 className="h-3.5 w-3.5" />Send back</button>
                 <button className="btn-danger btn-sm" onClick={() => { setDecision('reject'); setReason(''); }}><XCircle className="h-3.5 w-3.5" />Reject</button>
-              </div>
+              </div>}
             </div>
           )}
         </div>

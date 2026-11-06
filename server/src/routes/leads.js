@@ -3,7 +3,7 @@ import multer from 'multer';
 import { Lead } from '../models/Lead.js';
 import { env } from '../config/env.js';
 import { asyncHandler, validateObjectId } from '../middleware/errors.js';
-import { requireUser, requireUserOrApiKey, requireWriter, requireApprover } from '../middleware/auth.js';
+import { requireUser, requireUserOrApiKey, requirePermission } from '../middleware/auth.js';
 import { normalizeLead, cleanString, parseMoney } from '../utils/normalize.js';
 import { parseCsv, toCsv } from '../utils/csv.js';
 import { processLead, sendOutreach } from '../services/pipeline.js';
@@ -86,7 +86,7 @@ router.post('/webhook', requireUserOrApiKey, ingest);
 router.use(requireUser);
 
 // ─── CSV bulk import ─────────────────────────────────────────
-router.get('/import/template.csv', (_req, res) => {
+router.get('/import/template.csv', requirePermission('leads.import'), (_req, res) => {
   const csv = [
     'property_address,seller_name,seller_email,seller_phone,asking_price,property_condition,seller_timeline,property_type,bedrooms,bathrooms,square_feet,year_built,external_id',
     '"1600 Pennsylvania Ave NW, Washington, DC 20500",Jane Seller,jane@example.com,555-123-4567,350000,"Roof leaks, outdated kitchen, HVAC is 20 years old",ASAP,Single Family,3,2,1650,1978,LIST-001',
@@ -98,7 +98,7 @@ router.get('/import/template.csv', (_req, res) => {
 
 router.post(
   '/import',
-  requireWriter,
+  requirePermission('leads.import'),
   upload.single('file'),
   asyncHandler(async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'Attach a CSV file in the "file" field' });
@@ -155,7 +155,7 @@ router.post(
   })
 );
 
-router.get('/import/status', (_req, res) => res.json(queueStatus()));
+router.get('/import/status', requirePermission('leads.import'), (_req, res) => res.json(queueStatus()));
 
 // ─── Export ──────────────────────────────────────────────────
 function buildFilter(q) {
@@ -200,6 +200,7 @@ const SORTS = {
 
 router.get(
   '/export.csv',
+  requirePermission('leads.export'),
   asyncHandler(async (req, res) => {
     const leads = await Lead.find(buildFilter(req.query)).sort(SORTS[req.query.sort] || SORTS.newest).limit(10000).lean({ virtuals: false });
     const csv = toCsv(leads, [
@@ -222,6 +223,7 @@ router.get(
 // ─── List / board ────────────────────────────────────────────
 router.get(
   '/',
+  requirePermission('leads.view', 'pipeline.view', 'investor.view'),
   asyncHandler(async (req, res) => {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(500, Math.max(1, parseInt(req.query.limit, 10) || 25));
@@ -240,7 +242,7 @@ router.get('/meta/statuses', (_req, res) => res.json({ statuses: STATUSES, trans
 // ─── Bulk actions (registered before /:id routes) ───────────
 router.post(
   '/bulk/delete',
-  requireWriter,
+  requirePermission('leads.delete'),
   asyncHandler(async (req, res) => {
     const ids = Array.isArray(req.body?.ids) ? req.body.ids.slice(0, 500) : [];
     if (!ids.length) return res.status(400).json({ error: 'ids[] required' });
@@ -252,7 +254,7 @@ router.post(
 // Bulk move (Kanban multi-select). Invalid transitions are reported, not forced.
 router.post(
   '/bulk/status',
-  requireWriter,
+  requirePermission('leads.move'),
   asyncHandler(async (req, res) => {
     const { ids = [], status, reason } = req.body || {};
     if (!Array.isArray(ids) || !ids.length || !status) return res.status(400).json({ error: 'ids[] and status are required' });
@@ -272,13 +274,13 @@ router.post(
   })
 );
 
-router.get('/:id', validateObjectId(), loadLead, (req, res) => res.json(req.lead));
+router.get('/:id', validateObjectId(), requirePermission('leads.view', 'pipeline.view', 'investor.view'), loadLead, (req, res) => res.json(req.lead));
 
 // ─── Edit ────────────────────────────────────────────────────
 router.patch(
   '/:id',
   validateObjectId(),
-  requireWriter,
+  requirePermission('leads.edit'),
   loadLead,
   asyncHandler(async (req, res) => {
     const lead = req.lead;
@@ -330,7 +332,7 @@ router.patch(
 router.delete(
   '/:id',
   validateObjectId(),
-  requireWriter,
+  requirePermission('leads.delete'),
   asyncHandler(async (req, res) => {
     const r = await Lead.findByIdAndDelete(req.params.id);
     if (!r) return res.status(404).json({ error: 'Lead not found' });
@@ -343,7 +345,7 @@ router.delete(
 router.post(
   '/:id/underwrite',
   validateObjectId(),
-  requireWriter,
+  requirePermission('leads.underwrite'),
   loadLead,
   asyncHandler(async (req, res) => {
     const lead = req.lead;
@@ -365,12 +367,12 @@ router.post(
 router.post(
   '/:id/status',
   validateObjectId(),
-  requireWriter,
+  requirePermission('leads.move'),
   loadLead,
   asyncHandler(async (req, res) => {
     const { status, reason, override } = req.body || {};
     const isOverride = Boolean(override);
-    if (isOverride && req.user.role !== 'admin') return res.status(403).json({ error: 'Only admins can force a manual override' });
+    if (isOverride && !req.can('status.override')) return res.status(403).json({ error: 'You do not have permission to force a stage override', required: ['status.override'] });
     if (status === 'Outreach Sent' && !isOverride) {
       return res.status(409).json({ error: 'Use "Approve & send" to move a lead to Outreach Sent — it dispatches the seller email.' });
     }
@@ -385,7 +387,7 @@ router.post(
 router.post(
   '/:id/submit-for-approval',
   validateObjectId(),
-  requireWriter,
+  requirePermission('offers.submit'),
   loadLead,
   asyncHandler(async (req, res) => {
     const lead = req.lead;
@@ -399,7 +401,7 @@ router.post(
 router.post(
   '/:id/approve',
   validateObjectId(),
-  requireApprover,
+  requirePermission('offers.approve'),
   loadLead,
   asyncHandler(async (req, res) => {
     const lead = req.lead;
@@ -429,7 +431,7 @@ router.post(
 router.post(
   '/:id/decision',
   validateObjectId(),
-  requireApprover,
+  requirePermission('offers.decide'),
   loadLead,
   asyncHandler(async (req, res) => {
     const lead = req.lead;
@@ -450,7 +452,7 @@ router.post(
 router.get(
   '/:id/portal-link',
   validateObjectId(),
-  requireApprover,
+  requirePermission('portal.link'),
   loadLead,
   asyncHandler(async (req, res) => {
     const token = await ensurePortalToken(req.lead);
@@ -463,7 +465,7 @@ router.get(
 router.post(
   '/:id/outreach',
   validateObjectId(),
-  requireWriter,
+  requirePermission('outreach.send'),
   loadLead,
   asyncHandler(async (req, res) => {
     const kind = ['clarification', 'follow_up'].includes(req.body?.kind) ? req.body.kind : 'clarification';
@@ -480,7 +482,7 @@ router.post(
   })
 );
 
-router.get('/:id/email-preview', validateObjectId(), loadLead, (req, res) => {
+router.get('/:id/email-preview', validateObjectId(), requirePermission('outreach.send', 'offers.approve'), loadLead, (req, res) => {
   const kind = ['cash_offer', 'clarification', 'follow_up'].includes(req.query.kind) ? req.query.kind : 'cash_offer';
   const offer = parseMoney(req.query.offer);
   res.json({ kind, to: req.lead.seller_email || null, ...buildSellerEmail(req.lead, kind, { offer, note: cleanString(req.query.note, 1000), portalUrl: `${baseUrl(req)}/offer/…` }) });
@@ -490,7 +492,7 @@ router.get('/:id/email-preview', validateObjectId(), loadLead, (req, res) => {
 router.post(
   '/:id/notes',
   validateObjectId(),
-  requireWriter,
+  requirePermission('leads.notes'),
   loadLead,
   asyncHandler(async (req, res) => {
     const message = cleanString(req.body?.message, 2000);

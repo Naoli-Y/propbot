@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { User } from '../models/User.js';
+import { permissionsFor } from '../services/rbac.js';
 
 const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
@@ -12,7 +13,9 @@ const safeEqual = (a, b) => {
   return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
 };
 
-export const signToken = (user) => jwt.sign({ sub: user._id.toString(), role: user.role }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
+// Only the user id goes in the token — role and permissions are looked up on every
+// request, so changes made by the super admin take effect immediately.
+export const signToken = (user) => jwt.sign({ sub: user._id.toString() }, env.jwtSecret, { expiresIn: env.jwtExpiresIn });
 
 async function userFromBearer(req) {
   const header = req.headers.authorization || '';
@@ -27,27 +30,29 @@ async function userFromBearer(req) {
   }
 }
 
-/** Requires a logged-in dashboard user (JWT). */
+async function attachUser(req, user) {
+  req.user = user;
+  req.actor = user.email;
+  req.permissions = new Set(await permissionsFor(user));
+  req.can = (p) => req.permissions.has(p);
+}
+
+/** Requires a logged-in, active dashboard user. */
 export const requireUser = wrap(async (req, res, next) => {
   const user = await userFromBearer(req);
   if (!user) return res.status(401).json({ error: 'Authentication required' });
-  req.user = user;
-  req.actor = user.email;
+  await attachUser(req, user);
   next();
 });
 
-export const requireRole = (...roles) => (req, res, next) => {
-  if (!req.user || !roles.includes(req.user.role)) return res.status(403).json({ error: 'You do not have permission for this action' });
-  next();
+/** Requires at least one of the listed permissions (use after requireUser). */
+export const requirePermission = (...perms) => (req, res, next) => {
+  if (!req.permissions) return res.status(401).json({ error: 'Authentication required' });
+  if (perms.some((p) => req.permissions.has(p))) return next();
+  return res.status(403).json({ error: 'You do not have permission for this action', required: perms });
 };
 
-/** Blocks viewers and investors from editing lead data. */
-export const requireWriter = requireRole('admin', 'manager');
-
-/** Who may approve, reject or send back offers. */
-export const requireApprover = requireRole('admin', 'manager', 'investor');
-
-/** Dashboard JWT OR webhook API key (x-api-key). Used for lead ingestion. */
+/** Dashboard user with leads.create, OR the webhook API key (x-api-key). Used for lead ingestion. */
 export const requireUserOrApiKey = wrap(async (req, res, next) => {
   const key = req.headers['x-api-key'];
   if (key) {
@@ -58,13 +63,12 @@ export const requireUserOrApiKey = wrap(async (req, res, next) => {
   }
   const user = await userFromBearer(req);
   if (!user) return res.status(401).json({ error: 'Authentication required (Bearer token or x-api-key)' });
-  if (['viewer', 'investor'].includes(user.role)) return res.status(403).json({ error: 'Your role cannot create leads' });
-  req.user = user;
-  req.actor = user.email;
+  await attachUser(req, user);
+  if (!req.can('leads.create')) return res.status(403).json({ error: 'You do not have permission to create leads', required: ['leads.create'] });
   next();
 });
 
-/** Cloud Scheduler secret (x-cron-secret) OR an admin/manager JWT for manual runs. */
+/** Cloud Scheduler secret (x-cron-secret) OR a user with jobs.run for manual runs. */
 export const requireCronOrUser = wrap(async (req, res, next) => {
   const secret = req.headers['x-cron-secret'];
   if (secret) {
@@ -74,9 +78,9 @@ export const requireCronOrUser = wrap(async (req, res, next) => {
     return next();
   }
   const user = await userFromBearer(req);
-  if (!user || ['viewer', 'investor'].includes(user.role)) return res.status(401).json({ error: 'Authentication required' });
-  req.user = user;
-  req.actor = user.email;
+  if (!user) return res.status(401).json({ error: 'Authentication required' });
+  await attachUser(req, user);
+  if (!req.can('jobs.run')) return res.status(403).json({ error: 'You do not have permission to run jobs', required: ['jobs.run'] });
   req.trigger = 'manual';
   next();
 });

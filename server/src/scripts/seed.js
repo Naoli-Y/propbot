@@ -8,6 +8,7 @@ import { heuristicUnderwrite } from '../services/heuristics.js';
 import { transition, statusAfterUnderwriting } from '../services/stateMachine.js';
 import { normalizeLead } from '../utils/normalize.js';
 import { ensureAdminUser } from './bootstrap.js';
+import { ensureRoles, ensureSuperAdmin } from '../services/rbac.js';
 import { User } from '../models/User.js';
 import { newPortalToken } from '../services/portal.js';
 
@@ -29,7 +30,9 @@ const SAMPLES = [
 const ORDER = ['Inbound', 'Underwritten', 'Offer Drafted', 'Awaiting Approval', 'Outreach Sent'];
 
 await connectDB({ retries: 2 });
+await ensureRoles();
 await ensureAdminUser();
+await ensureSuperAdmin();
 // Demo investor account for the Investor desk.
 if (!(await User.exists({ email: 'investor@propbot.local' }))) {
   const investor = new User({ name: 'Demo Investor', email: 'investor@propbot.local', role: 'investor' });

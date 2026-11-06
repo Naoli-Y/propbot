@@ -49,7 +49,7 @@ Extras: JWT auth with admin / manager / viewer roles, team management, CSV expor
 | **“Sell your house” website** | `/sell` (public) | Sellers submit their property → normalized, geocoded and AI-underwritten instantly (source `website`) |
 | **Seller portal** | `/offer/<private-token>` (public) and `/offer` (lookup) | Sellers track their request, see the approved cash offer and **accept, decline or counter** |
 
-**Roles:** `admin` (everything + team), `manager` (work leads, send offers), `investor` (approve/reject offers, read-only otherwise), `viewer` (read-only).
+**Roles:** fully dynamic — see *Roles & permissions* below.
 The seed script creates a demo investor: `investor@propbot.local` with the same password as `ADMIN_PASSWORD`.
 
 **Seller portal flow**
@@ -63,6 +63,32 @@ Public endpoints: `POST /api/public/leads` (honeypot + consent + rate limit, 8 p
 Team endpoints added: `POST /api/leads/:id/decision` (`send_back` | `reject`, reason required), `GET /api/leads/:id/portal-link`, `GET /api/stats/investor`, list filter `?response=accepted,countered`.
 
 Set `PUBLIC_APP_URL` (your public address) so links in emails are correct, and `COMPANY_NAME` for the brand shown on the public site.
+
+---
+
+## Roles & permissions (dynamic)
+
+Access is controlled by **23 permissions**, each tied to a page or button (e.g. `investor.view`, `leads.import`, `offers.approve`, `users.manage`).
+The server checks them on every request; the dashboard hides pages and buttons the user can't use.
+
+| Default role | What it can do |
+|---|---|
+| **Super Admin** | Everything, including *Roles & permissions*. Locked (can't be edited) so nobody can lock everyone out. The first admin account becomes Super Admin automatically. |
+| **Admin** | Everything except editing role permissions |
+| **Acquisition Manager** | Overview, pipeline, leads, investor desk; create / import / edit / delete / move / underwrite leads; approve, reject and email offers; run jobs |
+| **Investor** | Investor desk, pipeline and leads (read-only); approve, send back or reject offers; copy seller links |
+| **Viewer** | Read-only dashboards and leads, CSV export |
+
+**Changing permissions at any time** (Settings → *Roles & permissions*, Super Admin):
+- Tick / untick permissions per role in the matrix and click **Save changes** — affected users see the change within a minute, without logging out.
+- **New role** — create custom roles (optionally copying another role's permissions). Default roles can be **reset**; custom roles can be deleted when no users have them.
+
+**Per-user exceptions** (Settings → *Team* → **Permissions**, needs `users.manage`): for each permission choose *Role default*, **Allow** or **Block** for just that person.
+Effective permissions = role permissions + allowed − blocked.
+
+Safety rules: there is always at least one active Super Admin; you can't change your own role or remove *Manage roles & permissions* from your own role; only a Super Admin can assign the Super Admin role; non-super-admins can only hand out permissions they hold themselves.
+
+API: `GET /api/roles`, `GET /api/roles/permissions`, `POST /api/roles`, `PATCH /api/roles/:key`, `POST /api/roles/:key/reset`, `DELETE /api/roles/:key`; users: `PATCH /api/auth/users/:id` with `role`, `permission_grants`, `permission_denies`. `GET /api/auth/me` returns the user's effective `permissions`.
 
 ---
 

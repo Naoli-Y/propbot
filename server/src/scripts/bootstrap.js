@@ -6,7 +6,7 @@ import { logger } from '../utils/logger.js';
 export async function ensureAdminUser() {
   const count = await User.estimatedDocumentCount();
   if (count > 0) return null;
-  const user = new User({ name: env.adminName, email: env.adminEmail.toLowerCase(), role: 'admin' });
+  const user = new User({ name: env.adminName, email: env.adminEmail.toLowerCase(), role: 'super_admin' });
   await user.setPassword(env.adminPassword);
   await user.save();
   logger.info('Created initial admin user', { email: user.email });

@@ -14,6 +14,7 @@ import statsRouter from './routes/stats.js';
 import jobsRouter from './routes/jobs.js';
 import systemRouter from './routes/system.js';
 import publicRouter from './routes/public.js';
+import rolesRouter from './routes/roles.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -70,6 +71,7 @@ export function createApp() {
   app.use('/api', systemRouter);
   app.use('/api', publicRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/roles', rolesRouter);
   app.use('/api/leads', leadsRouter);
   app.use('/api/stats', statsRouter);
   app.use('/api/jobs', jobsRouter);

@@ -6,7 +6,11 @@ const UserSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true, maxlength: 120 },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, maxlength: 254 },
     password_hash: { type: String, required: true, select: false },
-    role: { type: String, enum: ['admin', 'manager', 'investor', 'viewer'], default: 'manager' },
+    // Role key (see Role collection). Validated against existing roles in the API.
+    role: { type: String, required: true, default: 'manager', lowercase: true, trim: true },
+    // Personal overrides on top of the role: extra permissions granted / role permissions removed.
+    permission_grants: [{ type: String }],
+    permission_denies: [{ type: String }],
     active: { type: Boolean, default: true },
     last_login_at: Date,
   },
@@ -23,6 +27,8 @@ const UserSchema = new mongoose.Schema(
     },
   }
 );
+
+UserSchema.index({ role: 1 });
 
 UserSchema.methods.setPassword = async function setPassword(pw) {
   this.password_hash = await bcrypt.hash(pw, 11);
